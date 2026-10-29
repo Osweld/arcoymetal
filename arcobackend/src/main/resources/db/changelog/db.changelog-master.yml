@@ -1,1 +1,13 @@
-databaseChangeLog: []
+databaseChangeLog:
+  - include:
+      file: changes/employee/001-create-department.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/employee/002-create-municipality.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/employee/003-create-district.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/employee/004-load-geography-data.yaml
+      relativeToChangelogFile: true

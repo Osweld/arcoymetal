@@ -1,0 +1,39 @@
+databaseChangeLog:
+    - changeSet:
+        id: 002-create-municipality
+        author: arcobackend
+        changes:
+            - createTable:
+                tableName: municipality
+                columns:
+                    - column:
+                        name: id
+                        type: varchar(10)
+                        constraints:
+                            primaryKey: true
+                            nullable: false
+                    - column:
+                        name: name
+                        type: varchar(100)
+                        constraints:
+                            nullable: false
+                            unique: true
+                    - column:
+                        name: department_id
+                        type: varchar(10)
+                        constraints:
+                            nullable: false
+                            foreignKeyName: fk_municipality_department
+                            references: department(id)
+            - addUniqueConstraint:
+                tableName: municipality
+                columnNames: department_id, name
+                constraintName: uq_municipality_name_department_id
+            - createIndex:
+                tableName: municipality
+                indexName: idx_municipality_department_id
+                columns:
+                    - column:
+                        name: department_id
+
+            

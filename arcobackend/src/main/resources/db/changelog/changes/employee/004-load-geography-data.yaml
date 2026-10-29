@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-load-geography-data
+      author: arcobackend
+      changes:
+        - sqlFile:
+            path: ../../data/el-salvador-geography.sql
+            relativeToChangelogFile: true
+            splitStatements: true
+            stripComments: true

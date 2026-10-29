@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-district
+      author: arcobackend
+      changes:
+        - createTable:
+            tableName: district
+            columns:
+              - column:
+                  name: id
+                  type: varchar(10)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: municipality_id
+                  type: varchar(10)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_district_municipality
+                    references: municipality(id)
+        - addUniqueConstraint:
+            tableName: district
+            columnNames: municipality_id, name
+            constraintName: uq_district_name_municipality_id
+        - createIndex:
+            tableName: district
+            indexName: idx_district_municipality_id
+            columns:
+              - column:
+                  name: municipality_id
