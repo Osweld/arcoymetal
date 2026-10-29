@@ -9,11 +9,14 @@ public record BaseSalary(BigDecimal value) {
     public BaseSalary {
         Objects.requireNonNull(value, "Base salary value cannot be null");
 
-        if(value.compareTo(BigDecimal.ZERO) <= 0) {
+       
+
+        if(value.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Base salary cannot be negative");
         }
 
-        value = value.setScale(2, RoundingMode.UNNECESSARY);
+         value = value.setScale(2, RoundingMode.UNNECESSARY);
+
     }
 
 }

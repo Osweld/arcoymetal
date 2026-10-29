@@ -11,6 +11,8 @@ public record DUI(String value) {
 
         Objects.requireNonNull(value,"DUI cannot be null");
 
+        value = value.strip();
+
         if (!DUI_PATTERN.matcher(value).matches()) {
             throw new IllegalArgumentException("DUI must contain 9 digits, optionally separated by a hyphen");
         }
