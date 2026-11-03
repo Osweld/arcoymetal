@@ -71,4 +71,83 @@ public class Employee {
                 terminationDate, status);
     }
 
+    public EmployeeId getEmployeeId() {
+        return employeeId;
+    }
+
+    public Name getName() {
+        return name;
+    }
+
+    public Email getEmail() {
+        return email;
+    }
+
+    public PhoneNumber getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public Gender getGender() {
+        return gender;
+    }
+
+    public BirthDate getBirthDate() {
+        return birthDate;
+    }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public JobTitle getJobTitle() {
+        return jobTitle;
+    }
+
+    public BaseSalary getBaseSalary() {
+        return baseSalary;
+    }
+
+    public ContractType getContractType() {
+        return contractType;
+    }
+
+    public DUI getDui() {
+        return dui;
+    }
+
+    public NIT getNit() {
+        return nit;
+    }
+
+    public ISSS getIsss() {
+        return isss;
+    }
+
+    public NUP getNup() {
+        return nup;
+    }
+
+    public PensionFundInstitution getPensionFundInstitution() {
+        return pensionFundInstitution;
+    }
+
+    public HireDate getHireDate() {
+        return hireDate;
+    }
+
+    public TerminationDate getTerminationDate() {
+        return terminationDate;
+    }
+
+    public EmployeeStatus getStatus() {
+        return status;
+    }
+
+
+
+
+
+
+    
+
 }
