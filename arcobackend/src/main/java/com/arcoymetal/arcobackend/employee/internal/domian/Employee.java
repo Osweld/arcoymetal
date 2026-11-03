@@ -2,6 +2,7 @@ package com.arcoymetal.arcobackend.employee.internal.domian;
 
 import java.util.Objects;
 
+
 public class Employee {
 
     private final EmployeeId employeeId;
