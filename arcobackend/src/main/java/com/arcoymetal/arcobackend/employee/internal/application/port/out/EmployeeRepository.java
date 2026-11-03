@@ -6,5 +6,7 @@ import com.arcoymetal.arcobackend.employee.internal.domian.Employee;
 public interface EmployeeRepository {
 
     void save(Employee employee);
+    boolean existsByEmail(String email);
+    boolean existsByDui(String dui);
 
 }
