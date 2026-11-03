@@ -40,9 +40,22 @@ public class CreateEmployeeService implements CreateEmployeeUseCase {
     public EmployeeId createEmployee(CreateEmployeeCommand command) {
 
         Objects.requireNonNull(command, "CreateEmployeeCommand cannot be null");
+
+        if (employeeRepository.existsByEmail(command.email())) {
+            throw new IllegalArgumentException("An employee with the provided email already exists.");
+        }
+
+        if (employeeRepository.existsByDui(command.dui())) {
+            throw new IllegalArgumentException("An employee with the provided DUI already exists.");
+        }
+
+
         EmployeeId employeeId = EmployeeId.generate();
         Name name = new Name(command.firstName(), command.lastName());
         Email email = new Email(command.email());
+        NIT nit = command.nit() != null ? new NIT(command.nit()) : null;
+        ISSS isss = command.isss() != null ? new ISSS(command.isss()) : null;
+        NUP nup = command.nup() != null ? new NUP(command.nup()) : null;
         PhoneNumber phoneNumber = new PhoneNumber(command.phoneNumber());
         Gender gender = command.gender();
         BirthDate birthDate = new BirthDate(command.birthDate());
@@ -67,9 +80,9 @@ public class CreateEmployeeService implements CreateEmployeeUseCase {
                 baseSalary,
                 contractType,
                 dui,
-                command.nit() != null ? new NIT(command.nit()) : null,
-                command.isss() != null ? new ISSS(command.isss()) : null,
-                command.nup() != null ? new NUP(command.nup()) : null,
+                nit,
+                isss,
+                nup,
                 pensionFundInstitution,
                 hireDate);
 
