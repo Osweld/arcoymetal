@@ -2,6 +2,7 @@ package com.arcoymetal.arcobackend.employee.internal.application.service;
 
 import java.util.Objects;
 
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.arcoymetal.arcobackend.employee.internal.application.command.CreateEmployeeCommand;
@@ -27,6 +28,7 @@ import com.arcoymetal.arcobackend.employee.internal.domian.Name;
 import com.arcoymetal.arcobackend.employee.internal.domian.PensionFundInstitution;
 import com.arcoymetal.arcobackend.employee.internal.domian.PhoneNumber;
 
+@Service 
 public class CreateEmployeeService implements CreateEmployeeUseCase {
 
     private final EmployeeRepository employeeRepository;
