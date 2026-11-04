@@ -11,3 +11,6 @@ databaseChangeLog:
   - include:
       file: changes/employee/004-load-geography-data.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/employee/005-create-employee.yaml
+      relativeToChangelogFile: true

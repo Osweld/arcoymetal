@@ -1,0 +1,173 @@
+
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-employee
+      author: arcobackend
+      changes:
+        - createTable:
+            tableName: employee
+            columns:
+              # Primary key
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              # Personal information
+              - column:
+                  name: first_name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: last_name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: email
+                  type: varchar(150)
+                  constraints:
+                    nullable: false
+                    unique: true
+
+              - column:
+                  name: phone_number
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: gender
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: birth_date
+                  type: date
+                  constraints:
+                    nullable: false
+
+              # Address
+              - column:
+                  name: address_line
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: district_id
+                  type: varchar(10)
+                  constraints:
+                    nullable: false
+
+              # Employment information
+              - column:
+                  name: job_title
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: base_salary
+                  type: decimal(10,2)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: contract_type
+                  type: varchar(30)
+                  constraints:
+                    nullable: false
+
+              # Identification documents
+              - column:
+                  name: dui
+                  type: varchar(10)
+                  constraints:
+                    nullable: false
+                    unique: true
+
+              - column:
+                  name: nit
+                  type: varchar(17)
+                  constraints:
+                    nullable: true
+                    unique: true
+
+              - column:
+                  name: isss
+                  type: varchar(20)
+                  constraints:
+                    nullable: true
+                    unique: true
+
+              - column:
+                  name: nup
+                  type: varchar(20)
+                  constraints:
+                    nullable: true
+                    unique: true
+
+              - column:
+                  name: pension_fund_institution
+                  type: varchar(30)
+                  constraints:
+                    nullable: false
+
+              # Employment dates
+              - column:
+                  name: hire_date
+                  type: date
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: termination_date
+                  type: date
+                  constraints:
+                    nullable: true
+
+              - column:
+                  name: status
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+
+              # Auditing
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+
+              - column:
+                  name: created_by
+                  type: uuid
+
+              - column:
+                  name: updated_by
+                  type: uuid
+        - addForeignKeyConstraint:
+            baseTableName: employee
+            baseColumnNames: district_id
+            referencedTableName: district
+            referencedColumnNames: id
+            constraintName: fk_employee_district
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+        - createIndex:
+            tableName: employee
+            indexName: idx_employee_district_id
+            columns:
+              - column:
+                  name: district_id
