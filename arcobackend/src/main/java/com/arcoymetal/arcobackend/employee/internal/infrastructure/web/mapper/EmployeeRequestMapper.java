@@ -1,9 +1,13 @@
 package com.arcoymetal.arcobackend.employee.internal.infrastructure.web.mapper;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Component;
 
 import com.arcoymetal.arcobackend.employee.internal.application.command.CreateEmployeeCommand;
+import com.arcoymetal.arcobackend.employee.internal.application.command.UpdatePersonalInformationCommand;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.web.request.CreateEmployeeRequest;
+import com.arcoymetal.arcobackend.employee.internal.infrastructure.web.request.UpdatePersonalInformationRequest;
 
 @Component 
 public class EmployeeRequestMapper {
@@ -27,6 +31,18 @@ public class EmployeeRequestMapper {
                 request.nup() != null ? request.nup() : null,
                 request.pensionFundInstitution(),
                 request.hireDate()
+        );
+    }
+
+    public UpdatePersonalInformationCommand toUpdatePersonalInformationCommand(UpdatePersonalInformationRequest request, String id) {
+        return new UpdatePersonalInformationCommand(
+                UUID.fromString(id),
+                request.firstName(),
+                request.lastName(),
+                request.email(),
+                request.phoneNumber(),
+                request.addressLine(),
+                request.districtId()
         );
     }
 
