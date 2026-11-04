@@ -1,9 +1,12 @@
 package com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.adapter;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Repository;
 
 import com.arcoymetal.arcobackend.employee.internal.application.port.out.EmployeeRepository;
 import com.arcoymetal.arcobackend.employee.internal.domian.Employee;
+import com.arcoymetal.arcobackend.employee.internal.infrastructure.exception.EmployeeNotFoundException;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.mapper.EmployeePersistenceMapper;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.repository.SpringDataEmployeeRepository;
 
@@ -31,6 +34,16 @@ public class EmployeePersistenceAdapter  implements EmployeeRepository {
     @Override
     public boolean existsByDui(String dui) {
         return springDataEmployeeRepository.existsByDui(dui);
+    }
+
+    @Override
+    public void update(Employee employee) {
+        springDataEmployeeRepository.save(employeePersistenceMapper.toEntity(employee));
+    }
+
+    @Override
+    public Employee findById(UUID id) {
+        return employeePersistenceMapper.toDomain(springDataEmployeeRepository.findById(id).orElseThrow(() -> new EmployeeNotFoundException(id.toString())));
     }
 
 }

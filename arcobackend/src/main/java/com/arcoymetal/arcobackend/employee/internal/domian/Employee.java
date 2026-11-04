@@ -2,28 +2,34 @@ package com.arcoymetal.arcobackend.employee.internal.domian;
 
 import java.util.Objects;
 
-
 public class Employee {
 
     private final EmployeeId employeeId;
+
+    // Información personal
     private Name name;
     private Email email;
     private PhoneNumber phoneNumber;
-    private final Gender gender;
-    private final BirthDate birthDate;
+    private Gender gender;
+    private BirthDate birthDate;
     private Address address;
+
+    // Información laboral
     private JobTitle jobTitle;
     private BaseSalary baseSalary;
     private ContractType contractType;
-    private final DUI dui;
+    private PensionFundInstitution pensionFundInstitution;
+
+    // Identificación
+    private DUI dui;
     private NIT nit;
     private ISSS isss;
     private NUP nup;
-    private final PensionFundInstitution pensionFundInstitution;
-    private final HireDate hireDate;
+
+    // Información contractual
+    private HireDate hireDate;
     private TerminationDate terminationDate;
     private EmployeeStatus status;
-
 
     private Employee(EmployeeId employeeId, Name name, Email email, PhoneNumber phoneNumber, Gender gender,
             BirthDate birthDate, Address address, JobTitle jobTitle, BaseSalary baseSalary, ContractType contractType,
@@ -54,14 +60,57 @@ public class Employee {
             BirthDate birthDate, Address address, JobTitle jobTitle, BaseSalary baseSalary, ContractType contractType,
             DUI dui, NIT nit, ISSS isss, NUP nup, PensionFundInstitution pensionFundInstitution, HireDate hireDate) {
 
-        
-
         return new Employee(employeeId, name, email, phoneNumber, gender, birthDate, address, jobTitle,
                 baseSalary, contractType, dui, nit, isss, nup, pensionFundInstitution, hireDate,
-                null,EmployeeStatus.ACTIVE);
+                null, EmployeeStatus.ACTIVE);
     }
 
-    public static Employee reconstitute(EmployeeId employeeId, Name name, Email email, PhoneNumber phoneNumber, Gender gender,
+    public void updatePersonalInformation(
+            Name name,
+            Email email,
+            PhoneNumber phoneNumber,
+            Address address) {
+        this.name = Objects.requireNonNull(name, "Name must not be null");
+        this.email = Objects.requireNonNull(email, "Email must not be null");
+        this.phoneNumber = Objects.requireNonNull(phoneNumber, "Phone number must not be null");
+        this.address = Objects.requireNonNull(address, "Address must not be null");
+    }
+
+    public void updateEmploymentInformation(
+            JobTitle jobTitle,
+            ContractType contractType,
+            PensionFundInstitution pensionFundInstitution) {
+        this.jobTitle = Objects.requireNonNull(jobTitle, "Job title must not be null");
+        this.contractType = Objects.requireNonNull(contractType, "Contract type must not be null");
+        this.pensionFundInstitution = Objects.requireNonNull(
+                pensionFundInstitution, "Pension fund institution must not be null");
+    }
+
+    public void changeBaseSalary(BaseSalary baseSalary) {
+        this.baseSalary = Objects.requireNonNull(baseSalary, "Base salary must not be null");
+    }
+
+    public void correctIdentificationInformation(
+            DUI dui,
+            NIT nit,
+            ISSS isss,
+            NUP nup) {
+        this.dui = Objects.requireNonNull(dui, "DUI must not be null");
+        this.nit = nit;
+        this.isss = isss;
+        this.nup = nup;
+    }
+
+    public void correctBirthDate(BirthDate birthDate) {
+        this.birthDate = Objects.requireNonNull(birthDate, "Birth date must not be null");
+    }
+
+    public void correctHireDate(HireDate hireDate) {
+        this.hireDate = Objects.requireNonNull(hireDate, "Hire date must not be null");
+    }
+
+    public static Employee reconstitute(EmployeeId employeeId, Name name, Email email, PhoneNumber phoneNumber,
+            Gender gender,
             BirthDate birthDate, Address address, JobTitle jobTitle, BaseSalary baseSalary, ContractType contractType,
             DUI dui, NIT nit, ISSS isss, NUP nup, PensionFundInstitution pensionFundInstitution, HireDate hireDate,
             TerminationDate terminationDate, EmployeeStatus status) {
@@ -142,12 +191,5 @@ public class Employee {
     public EmployeeStatus getStatus() {
         return status;
     }
-
-
-
-
-
-
-    
 
 }
