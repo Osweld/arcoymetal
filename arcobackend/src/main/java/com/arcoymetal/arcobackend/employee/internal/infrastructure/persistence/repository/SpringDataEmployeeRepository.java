@@ -1,6 +1,7 @@
 package com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,5 +14,6 @@ public interface SpringDataEmployeeRepository extends JpaRepository<EmployeeEnti
     boolean existsByEmail(String email);
     boolean existsByDui(String dui);
     List<EmployeeDetailsProjection> findAllProjectedBy();
+    Optional<EmployeeDetailsProjection> findProjectedById(UUID employeeId);
 
 }

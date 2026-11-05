@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import com.arcoymetal.arcobackend.employee.internal.application.dto.EmployeeDetails;
 import com.arcoymetal.arcobackend.employee.internal.application.port.out.EmployeeQueryRepository;
+import com.arcoymetal.arcobackend.employee.internal.infrastructure.exception.EmployeeNotFoundException;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.repository.SpringDataEmployeeRepository;
 
 @Repository
@@ -48,8 +49,30 @@ public class EmployeeQueryRepositoryAdapter implements EmployeeQueryRepository {
 
     @Override
     public EmployeeDetails findEmployeeDetailsById(String employeeId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findEmployeeDetailsById'");
+        return springDataEmployeeRepository.findProjectedById(java.util.UUID.fromString(employeeId))
+                .map(projection -> new EmployeeDetails(
+                        projection.getId(),
+                        projection.getFirstName(),
+                        projection.getLastName(),
+                        projection.getEmail(),
+                        projection.getPhoneNumber(),
+                        projection.getGender(),
+                        projection.getBirthDate(),
+                        projection.getAddressLine(),
+                        projection.getDistrictId(),
+                        projection.getJobTitle(),
+                        projection.getBaseSalary(),
+                        projection.getContractType(),
+                        projection.getDui(),
+                        projection.getNit(),
+                        projection.getIsss(),
+                        projection.getNup(),
+                        projection.getPensionFundInstitution(),
+                        projection.getHireDate(),
+                        projection.getTerminationDate(),
+                        projection.getStatus()
+                ))
+                .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
     }
 
 
