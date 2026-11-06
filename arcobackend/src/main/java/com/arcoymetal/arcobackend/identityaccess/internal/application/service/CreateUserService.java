@@ -28,11 +28,18 @@ public class CreateUserService implements CreateUserUseCase {
 
         Objects.requireNonNull(command, "CreateUserCommand cannot be null");
 
-
         // TODO: Implement the logic to validate employeeId existence in the employee
         // service before creating the user.
         // For example, you could call an EmployeeService to check if the employee
         // exists.
+
+        if (userRepository.existsByEmployeeId(command.employeeId())) {
+            throw new IllegalArgumentException("User with employeeId " + command.employeeId() + " already exists.");
+        }
+
+        if (userRepository.existsByEmail(command.email())) {
+            throw new IllegalArgumentException("User with email " + command.email() + " already exists.");
+        }
 
         UserId userId = UserId.generate();
         PasswordHash passwordHash = passwordHasher.hash(command.password());

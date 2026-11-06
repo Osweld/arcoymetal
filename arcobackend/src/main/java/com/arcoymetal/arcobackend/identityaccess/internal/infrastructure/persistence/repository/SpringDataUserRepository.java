@@ -8,4 +8,7 @@ import com.arcoymetal.arcobackend.identityaccess.internal.infrastructure.persist
 
 public interface SpringDataUserRepository extends JpaRepository<UserEntity, UUID> {
 
+    boolean existsByEmail(String email);
+    boolean existsByEmployeeId(UUID employeeId);
+
 }
