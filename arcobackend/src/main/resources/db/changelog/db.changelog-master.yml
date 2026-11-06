@@ -14,3 +14,13 @@ databaseChangeLog:
   - include:
       file: changes/employee/005-create-employee.yaml
       relativeToChangelogFile: true
+
+  - include:
+      file: changes/identityaccess/001-create-users.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/identityaccess/002-create-user-roles.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/identityaccess/003-add-user-audit-columns.yaml
+      relativeToChangelogFile: true
