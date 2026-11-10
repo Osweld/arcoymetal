@@ -3,9 +3,9 @@ package com.arcoymetal.arcobackend.employee.internal.application.command;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.arcoymetal.arcobackend.employee.internal.domian.ContractType;
-import com.arcoymetal.arcobackend.employee.internal.domian.Gender;
-import com.arcoymetal.arcobackend.employee.internal.domian.PensionFundInstitution;
+import com.arcoymetal.arcobackend.employee.internal.domain.ContractType;
+import com.arcoymetal.arcobackend.employee.internal.domain.Gender;
+import com.arcoymetal.arcobackend.employee.internal.domain.PensionFundInstitution;
 
 public record CreateEmployeeCommand(
         String firstName,

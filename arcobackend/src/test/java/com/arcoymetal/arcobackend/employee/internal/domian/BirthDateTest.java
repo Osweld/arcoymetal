@@ -9,6 +9,8 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 import org.junit.jupiter.api.Test;
 
+import com.arcoymetal.arcobackend.employee.internal.domain.BirthDate;
+
 public class BirthDateTest {
 
     private static final ZoneId EL_SALVADOR = ZoneId.of("America/El_Salvador");

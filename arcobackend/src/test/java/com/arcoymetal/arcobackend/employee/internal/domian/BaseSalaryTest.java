@@ -9,6 +9,8 @@ import java.math.BigDecimal;
 
 import org.junit.jupiter.api.Test;
 
+import com.arcoymetal.arcobackend.employee.internal.domain.BaseSalary;
+
 public class BaseSalaryTest {
 
     @Test

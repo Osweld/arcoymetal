@@ -3,9 +3,9 @@ package com.arcoymetal.arcobackend.employee.internal.infrastructure.web.request;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.arcoymetal.arcobackend.employee.internal.domian.ContractType;
-import com.arcoymetal.arcobackend.employee.internal.domian.Gender;
-import com.arcoymetal.arcobackend.employee.internal.domian.PensionFundInstitution;
+import com.arcoymetal.arcobackend.employee.internal.domain.ContractType;
+import com.arcoymetal.arcobackend.employee.internal.domain.Gender;
+import com.arcoymetal.arcobackend.employee.internal.domain.PensionFundInstitution;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;

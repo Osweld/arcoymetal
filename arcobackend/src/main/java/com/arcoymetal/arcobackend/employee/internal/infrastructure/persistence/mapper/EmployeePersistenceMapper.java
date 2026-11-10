@@ -2,23 +2,23 @@ package com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.
 
 import org.springframework.stereotype.Component;
 
-import com.arcoymetal.arcobackend.employee.internal.domian.Address;
-import com.arcoymetal.arcobackend.employee.internal.domian.AddressLine;
-import com.arcoymetal.arcobackend.employee.internal.domian.BaseSalary;
-import com.arcoymetal.arcobackend.employee.internal.domian.BirthDate;
-import com.arcoymetal.arcobackend.employee.internal.domian.DUI;
-import com.arcoymetal.arcobackend.employee.internal.domian.DistrictId;
-import com.arcoymetal.arcobackend.employee.internal.domian.Email;
-import com.arcoymetal.arcobackend.employee.internal.domian.Employee;
-import com.arcoymetal.arcobackend.employee.internal.domian.EmployeeId;
-import com.arcoymetal.arcobackend.employee.internal.domian.HireDate;
-import com.arcoymetal.arcobackend.employee.internal.domian.ISSS;
-import com.arcoymetal.arcobackend.employee.internal.domian.JobTitle;
-import com.arcoymetal.arcobackend.employee.internal.domian.NIT;
-import com.arcoymetal.arcobackend.employee.internal.domian.NUP;
-import com.arcoymetal.arcobackend.employee.internal.domian.Name;
-import com.arcoymetal.arcobackend.employee.internal.domian.PhoneNumber;
-import com.arcoymetal.arcobackend.employee.internal.domian.TerminationDate;
+import com.arcoymetal.arcobackend.employee.internal.domain.Address;
+import com.arcoymetal.arcobackend.employee.internal.domain.AddressLine;
+import com.arcoymetal.arcobackend.employee.internal.domain.BaseSalary;
+import com.arcoymetal.arcobackend.employee.internal.domain.BirthDate;
+import com.arcoymetal.arcobackend.employee.internal.domain.DUI;
+import com.arcoymetal.arcobackend.employee.internal.domain.DistrictId;
+import com.arcoymetal.arcobackend.employee.internal.domain.Email;
+import com.arcoymetal.arcobackend.employee.internal.domain.Employee;
+import com.arcoymetal.arcobackend.employee.internal.domain.EmployeeId;
+import com.arcoymetal.arcobackend.employee.internal.domain.HireDate;
+import com.arcoymetal.arcobackend.employee.internal.domain.ISSS;
+import com.arcoymetal.arcobackend.employee.internal.domain.JobTitle;
+import com.arcoymetal.arcobackend.employee.internal.domain.NIT;
+import com.arcoymetal.arcobackend.employee.internal.domain.NUP;
+import com.arcoymetal.arcobackend.employee.internal.domain.Name;
+import com.arcoymetal.arcobackend.employee.internal.domain.PhoneNumber;
+import com.arcoymetal.arcobackend.employee.internal.domain.TerminationDate;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.entity.EmployeeEntity;
 
 @Component 

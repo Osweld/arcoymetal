@@ -1,4 +1,4 @@
-package com.arcoymetal.arcobackend.employee.internal.domian;
+package com.arcoymetal.arcobackend.employee.internal.domain;
 
 import java.time.LocalDate;
 import java.time.ZoneId;

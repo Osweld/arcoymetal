@@ -9,6 +9,8 @@ import java.time.ZoneId;
 
 import org.junit.jupiter.api.Test;
 
+import com.arcoymetal.arcobackend.employee.internal.domain.HireDate;
+
 public class HireDateTest {
 
     private static final ZoneId EL_SALVADOR = ZoneId.of("America/El_Salvador");

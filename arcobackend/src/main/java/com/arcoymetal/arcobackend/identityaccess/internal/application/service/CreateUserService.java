@@ -3,6 +3,7 @@ package com.arcoymetal.arcobackend.identityaccess.internal.application.service;
 import java.util.Objects;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.arcoymetal.arcobackend.employee.api.EmployeeExistenceVerifier;
 import com.arcoymetal.arcobackend.identityaccess.internal.application.command.CreateUserCommand;
@@ -26,6 +27,7 @@ public class CreateUserService implements CreateUserUseCase {
     private final EmployeeExistenceVerifier employeeExistenceVerifier;
 
     @Override
+    @Transactional 
     public UserId createUser(CreateUserCommand command) {
 
         Objects.requireNonNull(command, "CreateUserCommand cannot be null");

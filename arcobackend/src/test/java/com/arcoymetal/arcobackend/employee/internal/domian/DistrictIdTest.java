@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 
 import org.junit.jupiter.api.Test;
 
+import com.arcoymetal.arcobackend.employee.internal.domain.DistrictId;
+
 public class DistrictIdTest {
 
     @Test 

@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 import org.junit.jupiter.api.Test;
 
+import com.arcoymetal.arcobackend.employee.internal.domain.PhoneNumber;
+
 public class PhoneNumberTest {
 
     @Test

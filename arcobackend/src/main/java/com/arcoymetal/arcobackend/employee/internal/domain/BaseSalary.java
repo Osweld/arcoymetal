@@ -1,4 +1,4 @@
-package com.arcoymetal.arcobackend.employee.internal.domian;
+package com.arcoymetal.arcobackend.employee.internal.domain;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

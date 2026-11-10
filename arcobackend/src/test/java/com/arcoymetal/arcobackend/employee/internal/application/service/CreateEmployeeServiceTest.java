@@ -22,11 +22,11 @@ import java.time.LocalDate;
 
 import com.arcoymetal.arcobackend.employee.internal.application.command.CreateEmployeeCommand;
 import com.arcoymetal.arcobackend.employee.internal.application.port.out.EmployeeRepository;
-import com.arcoymetal.arcobackend.employee.internal.domian.ContractType;
-import com.arcoymetal.arcobackend.employee.internal.domian.Employee;
-import com.arcoymetal.arcobackend.employee.internal.domian.EmployeeId;
-import com.arcoymetal.arcobackend.employee.internal.domian.Gender;
-import com.arcoymetal.arcobackend.employee.internal.domian.PensionFundInstitution;
+import com.arcoymetal.arcobackend.employee.internal.domain.ContractType;
+import com.arcoymetal.arcobackend.employee.internal.domain.Employee;
+import com.arcoymetal.arcobackend.employee.internal.domain.EmployeeId;
+import com.arcoymetal.arcobackend.employee.internal.domain.Gender;
+import com.arcoymetal.arcobackend.employee.internal.domain.PensionFundInstitution;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateEmployeeServiceTest {

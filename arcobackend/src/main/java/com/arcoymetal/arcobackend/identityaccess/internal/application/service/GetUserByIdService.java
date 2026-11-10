@@ -1,6 +1,7 @@
 package com.arcoymetal.arcobackend.identityaccess.internal.application.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.arcoymetal.arcobackend.identityaccess.internal.application.dto.UserSummary;
 import com.arcoymetal.arcobackend.identityaccess.internal.application.port.in.GetUserByIdUseCase;
@@ -18,6 +19,7 @@ public class GetUserByIdService implements GetUserByIdUseCase {
    
 
     @Override
+    @Transactional(readOnly = true)
     public UserSummary getUserById(GetUserByIdQuery query) {
         return userQueryRepository.findById(query.userId());
     }

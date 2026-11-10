@@ -3,6 +3,7 @@ package com.arcoymetal.arcobackend.location.internal.application.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.arcoymetal.arcobackend.location.internal.application.dto.DepartmentDetails;
 import com.arcoymetal.arcobackend.location.internal.application.port.in.GetAllDepartmentHierarchyUseCase;
@@ -19,6 +20,7 @@ public class GetAllDepartmentHierarchyService implements GetAllDepartmentHierarc
 
 
     @Override
+    @Transactional 
     public List<DepartmentDetails> findAllHierarchy() {
         return locationQueryRepository.findAllHierarchy();
     }

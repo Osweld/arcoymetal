@@ -3,18 +3,19 @@ package com.arcoymetal.arcobackend.employee.internal.application.service;
 import java.util.Objects;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.arcoymetal.arcobackend.employee.internal.application.command.UpdatePersonalInformationCommand;
 import com.arcoymetal.arcobackend.employee.internal.application.port.in.UpdatePersonalInformationUseCase;
 import com.arcoymetal.arcobackend.employee.internal.application.port.out.EmployeeRepository;
-import com.arcoymetal.arcobackend.employee.internal.domian.Address;
-import com.arcoymetal.arcobackend.employee.internal.domian.AddressLine;
-import com.arcoymetal.arcobackend.employee.internal.domian.DistrictId;
-import com.arcoymetal.arcobackend.employee.internal.domian.Email;
-import com.arcoymetal.arcobackend.employee.internal.domian.Employee;
-import com.arcoymetal.arcobackend.employee.internal.domian.EmployeeId;
-import com.arcoymetal.arcobackend.employee.internal.domian.Name;
-import com.arcoymetal.arcobackend.employee.internal.domian.PhoneNumber;
+import com.arcoymetal.arcobackend.employee.internal.domain.Address;
+import com.arcoymetal.arcobackend.employee.internal.domain.AddressLine;
+import com.arcoymetal.arcobackend.employee.internal.domain.DistrictId;
+import com.arcoymetal.arcobackend.employee.internal.domain.Email;
+import com.arcoymetal.arcobackend.employee.internal.domain.Employee;
+import com.arcoymetal.arcobackend.employee.internal.domain.EmployeeId;
+import com.arcoymetal.arcobackend.employee.internal.domain.Name;
+import com.arcoymetal.arcobackend.employee.internal.domain.PhoneNumber;
 
 @Service
 public class UpdatePersonalInformationService implements UpdatePersonalInformationUseCase {
@@ -26,6 +27,7 @@ public class UpdatePersonalInformationService implements UpdatePersonalInformati
     }
 
     @Override
+    @Transactional 
     public EmployeeId updatePersonalInformation(UpdatePersonalInformationCommand command) {
 
         Objects.requireNonNull(command, "UpdatePersonalInformationCommand cannot be null");

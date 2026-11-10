@@ -8,6 +8,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
+import com.arcoymetal.arcobackend.employee.internal.domain.Address;
+import com.arcoymetal.arcobackend.employee.internal.domain.AddressLine;
+import com.arcoymetal.arcobackend.employee.internal.domain.BaseSalary;
+import com.arcoymetal.arcobackend.employee.internal.domain.BirthDate;
+import com.arcoymetal.arcobackend.employee.internal.domain.ContractType;
+import com.arcoymetal.arcobackend.employee.internal.domain.DUI;
+import com.arcoymetal.arcobackend.employee.internal.domain.DistrictId;
+import com.arcoymetal.arcobackend.employee.internal.domain.Email;
+import com.arcoymetal.arcobackend.employee.internal.domain.Employee;
+import com.arcoymetal.arcobackend.employee.internal.domain.EmployeeId;
+import com.arcoymetal.arcobackend.employee.internal.domain.EmployeeStatus;
+import com.arcoymetal.arcobackend.employee.internal.domain.Gender;
+import com.arcoymetal.arcobackend.employee.internal.domain.HireDate;
+import com.arcoymetal.arcobackend.employee.internal.domain.ISSS;
+import com.arcoymetal.arcobackend.employee.internal.domain.JobTitle;
+import com.arcoymetal.arcobackend.employee.internal.domain.NIT;
+import com.arcoymetal.arcobackend.employee.internal.domain.NUP;
+import com.arcoymetal.arcobackend.employee.internal.domain.Name;
+import com.arcoymetal.arcobackend.employee.internal.domain.PensionFundInstitution;
+import com.arcoymetal.arcobackend.employee.internal.domain.PhoneNumber;
+
 public class EmployeeTest {
 
         final EmployeeId employeeId = new EmployeeId(UUID.fromString("f8c3de3d-1fea-4d7c-a8b0-29f63c4c3454"));
