@@ -1,6 +1,7 @@
 package com.arcoymetal.arcobackend.employee.internal.application.command;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import com.arcoymetal.arcobackend.employee.internal.domain.ContractType;
@@ -11,7 +12,8 @@ public record UpdateEmployeeInformationCommand(
     BigDecimal baseSalary,
     String jobTitle,
     ContractType contractType,
-    PensionFundInstitution pensionFundInstitution
+    PensionFundInstitution pensionFundInstitution,
+    LocalDate hireDate
 ) {
 
 }

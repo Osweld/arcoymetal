@@ -1,5 +1,6 @@
 package com.arcoymetal.arcobackend.employee.internal.application.command;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 public record UpdatePersonalInformationCommand(
@@ -9,7 +10,8 @@ public record UpdatePersonalInformationCommand(
     String email,
     String phoneNumber,
     String addressLine,
-    String districtId
+    String districtId,
+    LocalDate birthDate
 ) {
 
 }
