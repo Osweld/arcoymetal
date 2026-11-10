@@ -69,25 +69,27 @@ public class Employee {
             Name name,
             Email email,
             PhoneNumber phoneNumber,
-            Address address) {
+            Address address,
+            BirthDate birthDate) {
         this.name = Objects.requireNonNull(name, "Name must not be null");
         this.email = Objects.requireNonNull(email, "Email must not be null");
         this.phoneNumber = Objects.requireNonNull(phoneNumber, "Phone number must not be null");
         this.address = Objects.requireNonNull(address, "Address must not be null");
+        this.birthDate = Objects.requireNonNull(birthDate, "Birth date must not be null");
     }
 
     public void updateEmploymentInformation(
+            BaseSalary baseSalary,
             JobTitle jobTitle,
             ContractType contractType,
-            PensionFundInstitution pensionFundInstitution) {
+            PensionFundInstitution pensionFundInstitution,
+            HireDate hireDate) {
+        this.baseSalary = Objects.requireNonNull(baseSalary, "Base salary must not be null");
         this.jobTitle = Objects.requireNonNull(jobTitle, "Job title must not be null");
         this.contractType = Objects.requireNonNull(contractType, "Contract type must not be null");
         this.pensionFundInstitution = Objects.requireNonNull(
                 pensionFundInstitution, "Pension fund institution must not be null");
-    }
-
-    public void changeBaseSalary(BaseSalary baseSalary) {
-        this.baseSalary = Objects.requireNonNull(baseSalary, "Base salary must not be null");
+        this.hireDate = Objects.requireNonNull(hireDate, "Hire date must not be null");
     }
 
     public void correctIdentificationInformation(
@@ -101,13 +103,6 @@ public class Employee {
         this.nup = nup;
     }
 
-    public void correctBirthDate(BirthDate birthDate) {
-        this.birthDate = Objects.requireNonNull(birthDate, "Birth date must not be null");
-    }
-
-    public void correctHireDate(HireDate hireDate) {
-        this.hireDate = Objects.requireNonNull(hireDate, "Hire date must not be null");
-    }
 
     public static Employee reconstitute(EmployeeId employeeId, Name name, Email email, PhoneNumber phoneNumber,
             Gender gender,

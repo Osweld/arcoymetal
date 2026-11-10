@@ -10,6 +10,7 @@ import com.arcoymetal.arcobackend.employee.internal.application.port.in.UpdatePe
 import com.arcoymetal.arcobackend.employee.internal.application.port.out.EmployeeRepository;
 import com.arcoymetal.arcobackend.employee.internal.domain.Address;
 import com.arcoymetal.arcobackend.employee.internal.domain.AddressLine;
+import com.arcoymetal.arcobackend.employee.internal.domain.BirthDate;
 import com.arcoymetal.arcobackend.employee.internal.domain.DistrictId;
 import com.arcoymetal.arcobackend.employee.internal.domain.Email;
 import com.arcoymetal.arcobackend.employee.internal.domain.Employee;
@@ -49,7 +50,9 @@ public class UpdatePersonalInformationService implements UpdatePersonalInformati
             new Address(
                 new AddressLine(command.addressLine()),
                 new DistrictId(command.districtId())
-            ));
+            ),
+            new BirthDate(command.birthDate())
+        );
     }
 
 }

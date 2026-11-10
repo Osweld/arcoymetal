@@ -1,15 +1,12 @@
 package com.arcoymetal.arcobackend.employee.internal.infrastructure.web.mapper;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import com.arcoymetal.arcobackend.employee.internal.application.command.ChangeBaseSalaryCommand;
 import com.arcoymetal.arcobackend.employee.internal.application.command.CreateEmployeeCommand;
 import com.arcoymetal.arcobackend.employee.internal.application.command.UpdateEmployeeInformationCommand;
 import com.arcoymetal.arcobackend.employee.internal.application.command.UpdatePersonalInformationCommand;
-import com.arcoymetal.arcobackend.employee.internal.infrastructure.web.request.ChangeBaseSalaryRequest;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.web.request.CreateEmployeeRequest;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.web.request.UpdateEmployeeInformationRequest;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.web.request.UpdatePersonalInformationRequest;
@@ -47,21 +44,21 @@ public class EmployeeRequestMapper {
                 request.email(),
                 request.phoneNumber(),
                 request.addressLine(),
-                request.districtId()
+                request.districtId(),
+                request.birthDate()
         );
     }
 
     public UpdateEmployeeInformationCommand toUpdateEmployeeInformationCommand(UpdateEmployeeInformationRequest request, UUID id) {
         return new UpdateEmployeeInformationCommand(
                 id,
+                request.baseSalary(),
                 request.jobTitle(),
                 request.contractType(),
-                request.pensionFundInstitution()
+                request.pensionFundInstitution(),
+                request.hireDate()
         );
     }
 
-    public ChangeBaseSalaryCommand toChangeBaseSalaryCommand(ChangeBaseSalaryRequest request, UUID employeeId) {
-        return new ChangeBaseSalaryCommand(employeeId, request.newBaseSalary());
-    }
 
 }
