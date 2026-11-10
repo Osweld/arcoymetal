@@ -4,9 +4,11 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.arcoymetal.arcobackend.employee.internal.application.command.CorrectIdentificationInformationCommand;
 import com.arcoymetal.arcobackend.employee.internal.application.command.CreateEmployeeCommand;
 import com.arcoymetal.arcobackend.employee.internal.application.command.UpdateEmployeeInformationCommand;
 import com.arcoymetal.arcobackend.employee.internal.application.command.UpdatePersonalInformationCommand;
+import com.arcoymetal.arcobackend.employee.internal.infrastructure.web.request.CorrectIdentificationInformationRequest;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.web.request.CreateEmployeeRequest;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.web.request.UpdateEmployeeInformationRequest;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.web.request.UpdatePersonalInformationRequest;
@@ -57,6 +59,16 @@ public class EmployeeRequestMapper {
                 request.contractType(),
                 request.pensionFundInstitution(),
                 request.hireDate()
+        );
+    }
+
+    public CorrectIdentificationInformationCommand toCorrectIdentificationInformationCommand(CorrectIdentificationInformationRequest request, UUID id) {
+        return new CorrectIdentificationInformationCommand(
+                id,
+                request.dui(),
+                request.nit() != null ? request.nit() : null,
+                request.isss() != null ? request.isss() : null,
+                request.nup() != null ? request.nup() : null
         );
     }
 
