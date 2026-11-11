@@ -63,7 +63,7 @@ databaseChangeLog:
 
               - column:
                   name: district_id
-                  type: UUID
+                  type: varchar(10)
                   constraints:
                     nullable: false
 

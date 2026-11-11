@@ -54,7 +54,7 @@ public class EmployeeEntity extends AuditableEntity {
     private String addressLine;
 
     @Column(name = "district_id", nullable = false)
-    private UUID districtId;
+    private String districtId;
 
     @Column(nullable = false, unique = true, length = 9)
     private String dui;
