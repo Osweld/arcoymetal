@@ -4,10 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import com.arcoymetal.arcobackend.employee.internal.domain.ContractType;
-import com.arcoymetal.arcobackend.employee.internal.domain.EmployeeStatus;
-import com.arcoymetal.arcobackend.employee.internal.domain.Gender;
-import com.arcoymetal.arcobackend.employee.internal.domain.PensionFundInstitution;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.Gender;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.PensionFundInstitution;
+import com.arcoymetal.arcobackend.employee.internal.domain.employment.ContractType;
+import com.arcoymetal.arcobackend.employee.internal.domain.employment.EmployeeStatus;
 
 public interface EmployeeDetailsProjection {
 

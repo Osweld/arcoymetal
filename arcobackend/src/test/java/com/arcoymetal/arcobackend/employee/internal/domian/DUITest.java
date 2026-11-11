@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 import org.junit.jupiter.api.Test;
 
-import com.arcoymetal.arcobackend.employee.internal.domain.DUI;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.DUI;
 
 public class DUITest {
 

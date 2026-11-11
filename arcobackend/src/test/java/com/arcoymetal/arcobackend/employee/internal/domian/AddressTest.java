@@ -5,9 +5,9 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 import org.junit.jupiter.api.Test;
 
-import com.arcoymetal.arcobackend.employee.internal.domain.Address;
-import com.arcoymetal.arcobackend.employee.internal.domain.AddressLine;
-import com.arcoymetal.arcobackend.employee.internal.domain.DistrictId;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.Address;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.AddressLine;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.DistrictId;
 
 public class AddressTest {
 

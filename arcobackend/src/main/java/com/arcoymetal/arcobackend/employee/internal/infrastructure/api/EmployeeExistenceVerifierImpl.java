@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor 
 public class EmployeeExistenceVerifierImpl implements EmployeeExistenceVerifier {
 
+    //TODO: Consider using a more generic repository interface instead of SpringDataEmployeeRepository to decouple the implementation from Spring Data JPA.
     private final SpringDataEmployeeRepository employeeRepository;
 
     @Override

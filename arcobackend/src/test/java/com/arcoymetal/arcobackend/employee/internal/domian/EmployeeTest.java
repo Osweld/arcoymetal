@@ -8,26 +8,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-import com.arcoymetal.arcobackend.employee.internal.domain.Address;
-import com.arcoymetal.arcobackend.employee.internal.domain.AddressLine;
-import com.arcoymetal.arcobackend.employee.internal.domain.BaseSalary;
-import com.arcoymetal.arcobackend.employee.internal.domain.BirthDate;
-import com.arcoymetal.arcobackend.employee.internal.domain.ContractType;
-import com.arcoymetal.arcobackend.employee.internal.domain.DUI;
-import com.arcoymetal.arcobackend.employee.internal.domain.DistrictId;
-import com.arcoymetal.arcobackend.employee.internal.domain.Email;
-import com.arcoymetal.arcobackend.employee.internal.domain.Employee;
-import com.arcoymetal.arcobackend.employee.internal.domain.EmployeeId;
-import com.arcoymetal.arcobackend.employee.internal.domain.EmployeeStatus;
-import com.arcoymetal.arcobackend.employee.internal.domain.Gender;
-import com.arcoymetal.arcobackend.employee.internal.domain.HireDate;
-import com.arcoymetal.arcobackend.employee.internal.domain.ISSS;
-import com.arcoymetal.arcobackend.employee.internal.domain.JobTitle;
-import com.arcoymetal.arcobackend.employee.internal.domain.NIT;
-import com.arcoymetal.arcobackend.employee.internal.domain.NUP;
-import com.arcoymetal.arcobackend.employee.internal.domain.Name;
-import com.arcoymetal.arcobackend.employee.internal.domain.PensionFundInstitution;
-import com.arcoymetal.arcobackend.employee.internal.domain.PhoneNumber;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.Address;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.AddressLine;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.BirthDate;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.DUI;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.DistrictId;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.Email;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.Employee;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.EmployeeId;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.Gender;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.ISSS;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.NIT;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.NUP;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.Name;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.PensionFundInstitution;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.PhoneNumber;
+import com.arcoymetal.arcobackend.employee.internal.domain.employment.BaseSalary;
+import com.arcoymetal.arcobackend.employee.internal.domain.employment.ContractType;
+import com.arcoymetal.arcobackend.employee.internal.domain.employment.EmployeeStatus;
+import com.arcoymetal.arcobackend.employee.internal.domain.employment.StartDate;
+import com.arcoymetal.arcobackend.employee.internal.domain.employment.JobTitle;
 
 public class EmployeeTest {
 
@@ -48,7 +48,7 @@ public class EmployeeTest {
         NIT nit = new NIT("12341234561231");
         ISSS isss = new ISSS("123456789");
         NUP nup = new NUP("123456789");
-        HireDate hireDate = new HireDate(LocalDate.of(2020, 1, 1));
+        StartDate hireDate = new StartDate(LocalDate.of(2020, 1, 1));
         PensionFundInstitution pensionFundInstitution = PensionFundInstitution.AFP_CONFIA;  
 
     @Test

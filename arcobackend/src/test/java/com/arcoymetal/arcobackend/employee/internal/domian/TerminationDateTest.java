@@ -9,7 +9,7 @@ import java.time.ZoneId;
 
 import org.junit.jupiter.api.Test;
 
-import com.arcoymetal.arcobackend.employee.internal.domain.TerminationDate;
+import com.arcoymetal.arcobackend.employee.internal.domain.employment.EndDate;
 
 public class TerminationDateTest {
 
@@ -18,7 +18,7 @@ public class TerminationDateTest {
     @Test
     void shouldCreateTerminationDate() {
         LocalDate date = LocalDate.now(EL_SALVADOR).plusDays(1);
-        TerminationDate terminationDate = new TerminationDate(date);
+        EndDate terminationDate = new EndDate(date);
 
         assertThat(terminationDate.value()).isEqualTo(date);
     }
@@ -26,7 +26,7 @@ public class TerminationDateTest {
     @Test
     void shouldThrowExceptionWhenValueIsNull() {
         assertThatNullPointerException()
-                .isThrownBy(() -> new TerminationDate(null))
+                .isThrownBy(() -> new EndDate(null))
                 .withMessage("TerminationDate value cannot be null");
     }
 
@@ -34,14 +34,14 @@ public class TerminationDateTest {
     void shouldThrowExceptionWhenValueIsInThePast() {
         LocalDate date = LocalDate.now(EL_SALVADOR).minusDays(1);
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new TerminationDate(date))
+                .isThrownBy(() -> new EndDate(date))
                 .withMessage("TerminationDate cannot be in the past");
     }
 
     @Test
     void shouldAcceptTodayAsTerminationDate() {
         LocalDate today = LocalDate.now(EL_SALVADOR);
-        TerminationDate terminationDate = new TerminationDate(today);
+        EndDate terminationDate = new EndDate(today);
         assertThat(terminationDate.value()).isEqualTo(today);
     }
 

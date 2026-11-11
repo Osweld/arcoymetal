@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import com.arcoymetal.arcobackend.employee.internal.domain.EmployeeId;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.EmployeeId;
 
 public class EmployeeIdTest {
 

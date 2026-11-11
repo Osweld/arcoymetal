@@ -9,7 +9,7 @@ import java.time.ZoneId;
 
 import org.junit.jupiter.api.Test;
 
-import com.arcoymetal.arcobackend.employee.internal.domain.HireDate;
+import com.arcoymetal.arcobackend.employee.internal.domain.employment.StartDate;
 
 public class HireDateTest {
 
@@ -18,7 +18,7 @@ public class HireDateTest {
     @Test
     void shouldCreateHireDateWithValueIsValid() {
         LocalDate date = LocalDate.of(1998, 5, 11);
-        HireDate hireDate = new HireDate(date);
+        StartDate hireDate = new StartDate(date);
 
         assertThat(hireDate.value()).isEqualTo(date);
     }
@@ -26,14 +26,14 @@ public class HireDateTest {
     @Test
     void shouldAcceptTodayAsHireDate() {
         LocalDate today = LocalDate.now(EL_SALVADOR);
-        HireDate hireDate = new HireDate(today);
+        StartDate hireDate = new StartDate(today);
         assertThat(hireDate.value()).isEqualTo(today);
     }
 
     @Test
     void shouldAcceptPastDateAsHireDate() {
         LocalDate yesterday = LocalDate.now(EL_SALVADOR).minusDays(1);
-        HireDate hireDate = new HireDate(yesterday);
+        StartDate hireDate = new StartDate(yesterday);
         assertThat(hireDate.value()).isEqualTo(yesterday);
     }
 
@@ -41,14 +41,14 @@ public class HireDateTest {
     void shouldThrowExceptionWhenValueIsInTheFuture() {
         LocalDate tomorrow = LocalDate.now(EL_SALVADOR).plusDays(1);
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new HireDate(tomorrow))
+                .isThrownBy(() -> new StartDate(tomorrow))
                 .withMessage("Hire date cannot be in the future");
     }
 
     @Test
     void shouldThrowExceptionWhenValueIsNull() {
         assertThatNullPointerException()
-                .isThrownBy(() -> new HireDate(null))
+                .isThrownBy(() -> new StartDate(null))
                 .withMessage("Hire date cannot be null");
     }
 

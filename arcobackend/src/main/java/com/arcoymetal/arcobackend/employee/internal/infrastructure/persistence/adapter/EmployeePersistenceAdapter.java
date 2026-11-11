@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
 import com.arcoymetal.arcobackend.employee.internal.application.port.out.EmployeeRepository;
-import com.arcoymetal.arcobackend.employee.internal.domain.Employee;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.Employee;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.exception.EmployeeNotFoundException;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.mapper.EmployeePersistenceMapper;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.repository.SpringDataEmployeeRepository;
