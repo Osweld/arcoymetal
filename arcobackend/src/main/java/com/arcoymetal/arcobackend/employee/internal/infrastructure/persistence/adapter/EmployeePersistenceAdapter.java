@@ -21,29 +21,5 @@ public class EmployeePersistenceAdapter  implements EmployeeRepository {
         this.employeePersistenceMapper = employeePersistenceMapper;
     }
 
-    @Override
-    public void save(Employee employee) {
-        springDataEmployeeRepository.save(employeePersistenceMapper.toEntity(employee));
-    }
-
-    @Override
-    public boolean existsByEmail(String email) {
-        return springDataEmployeeRepository.existsByEmail(email);
-    }
-
-    @Override
-    public boolean existsByDui(String dui) {
-        return springDataEmployeeRepository.existsByDui(dui);
-    }
-
-    @Override
-    public void update(Employee employee) {
-        springDataEmployeeRepository.save(employeePersistenceMapper.toEntity(employee));
-    }
-
-    @Override
-    public Employee findById(UUID id) {
-        return employeePersistenceMapper.toDomain(springDataEmployeeRepository.findById(id).orElseThrow(() -> new EmployeeNotFoundException(id.toString())));
-    }
 
 }

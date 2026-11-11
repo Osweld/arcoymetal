@@ -1,18 +1,22 @@
 databaseChangeLog:
   - include:
-      file: changes/employee/001-create-department.yaml
+      file: changes/location/001-create-department.yaml
       relativeToChangelogFile: true
   - include:
-      file: changes/employee/002-create-municipality.yaml
+      file: changes/location/002-create-municipality.yaml
       relativeToChangelogFile: true
   - include:
-      file: changes/employee/003-create-district.yaml
+      file: changes/location/003-create-district.yaml
       relativeToChangelogFile: true
   - include:
-      file: changes/employee/004-load-geography-data.yaml
+      file: changes/location/004-load-geography-data.yaml
+      relativeToChangelogFile: true
+
+  - include:
+      file: changes/employee/001-create-employee.yaml
       relativeToChangelogFile: true
   - include:
-      file: changes/employee/005-create-employee.yaml
+      file: changes/employee/002-create-employment-period.yaml
       relativeToChangelogFile: true
 
   - include:

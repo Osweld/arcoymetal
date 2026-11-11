@@ -1,7 +1,7 @@
 
 databaseChangeLog:
   - changeSet:
-      id: 002-create-employee
+      id: 001-create-employee
       author: arcobackend
       changes:
         - createTable:
@@ -10,164 +10,133 @@ databaseChangeLog:
               # Primary key
               - column:
                   name: id
-                  type: uuid
+                  type: UUID
                   constraints:
                     primaryKey: true
+                    primaryKeyName: pk_employee
                     nullable: false
 
               # Personal information
               - column:
                   name: first_name
-                  type: varchar(100)
+                  type: VARCHAR(100)
                   constraints:
                     nullable: false
 
               - column:
                   name: last_name
-                  type: varchar(100)
+                  type: VARCHAR(100)
                   constraints:
                     nullable: false
 
               - column:
                   name: email
-                  type: varchar(150)
+                  type: VARCHAR(254)
                   constraints:
                     nullable: false
                     unique: true
+                    uniqueConstraintName: uk_employee_email
 
               - column:
                   name: phone_number
-                  type: varchar(20)
+                  type: VARCHAR(8)
                   constraints:
                     nullable: false
 
               - column:
                   name: gender
-                  type: varchar(20)
+                  type: VARCHAR(20)
                   constraints:
                     nullable: false
 
               - column:
                   name: birth_date
-                  type: date
+                  type: DATE
                   constraints:
                     nullable: false
 
-              # Address
               - column:
                   name: address_line
-                  type: varchar(255)
+                  type: VARCHAR(150)
                   constraints:
                     nullable: false
 
               - column:
                   name: district_id
-                  type: varchar(10)
+                  type: UUID
                   constraints:
                     nullable: false
 
-              # Employment information
-              - column:
-                  name: job_title
-                  type: varchar(100)
-                  constraints:
-                    nullable: false
-
-              - column:
-                  name: base_salary
-                  type: decimal(10,2)
-                  constraints:
-                    nullable: false
-
-              - column:
-                  name: contract_type
-                  type: varchar(30)
-                  constraints:
-                    nullable: false
-
-              # Identification documents
+              # Identification information
               - column:
                   name: dui
-                  type: varchar(10)
+                  type: VARCHAR(9)
                   constraints:
                     nullable: false
                     unique: true
+                    uniqueConstraintName: uk_employee_dui
 
               - column:
                   name: nit
-                  type: varchar(17)
-                  constraints:
-                    nullable: true
-                    unique: true
+                  type: VARCHAR(17)
 
               - column:
                   name: isss
-                  type: varchar(20)
-                  constraints:
-                    nullable: true
-                    unique: true
+                  type: VARCHAR(9)
 
               - column:
                   name: nup
-                  type: varchar(20)
-                  constraints:
-                    nullable: true
-                    unique: true
+                  type: VARCHAR(9)
 
+              # Pension information
               - column:
                   name: pension_fund_institution
-                  type: varchar(30)
+                  type: VARCHAR(30)
                   constraints:
                     nullable: false
 
-              # Employment dates
-              - column:
-                  name: hire_date
-                  type: date
-                  constraints:
-                    nullable: false
-
-              - column:
-                  name: termination_date
-                  type: date
-                  constraints:
-                    nullable: true
-
-              - column:
-                  name: status
-                  type: varchar(20)
-                  constraints:
-                    nullable: false
-
-              # Auditing
+              # Auditing information
               - column:
                   name: created_at
-                  type: timestamp with time zone
+                  type: TIMESTAMP WITH TIME ZONE
                   constraints:
                     nullable: false
 
               - column:
                   name: updated_at
-                  type: timestamp with time zone
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
 
               - column:
                   name: created_by
-                  type: uuid
+                  type: UUID
 
               - column:
                   name: updated_by
-                  type: uuid
+                  type: UUID
+
+        # Unique constraints
+        - addUniqueConstraint:
+            tableName: employee
+            columnNames: nit
+            constraintName: uk_employee_nit
+
+        - addUniqueConstraint:
+            tableName: employee
+            columnNames: isss
+            constraintName: uk_employee_isss
+
+        - addUniqueConstraint:
+            tableName: employee
+            columnNames: nup
+            constraintName: uk_employee_nup
+
+        # Foreign keys
         - addForeignKeyConstraint:
             baseTableName: employee
             baseColumnNames: district_id
+            constraintName: fk_employee_district
             referencedTableName: district
             referencedColumnNames: id
-            constraintName: fk_employee_district
             onDelete: RESTRICT
-            onUpdate: RESTRICT
-        - createIndex:
-            tableName: employee
-            indexName: idx_employee_district_id
-            columns:
-              - column:
-                  name: district_id

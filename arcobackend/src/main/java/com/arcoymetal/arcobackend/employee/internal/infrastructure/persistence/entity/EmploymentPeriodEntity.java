@@ -13,16 +13,24 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.AccessLevel;
 
 @Entity
-@Table (name = "employment_period")
+@Table(
+    name = "employment_period",
+    indexes = {
+        @Index(
+            name = "idx_employment_employee",
+            columnList = "employee_id"
+        )
+    }
+)
 @Getter
-@Setter
-@NoArgsConstructor()
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class EmploymentPeriodEntity {
 
     @Id
@@ -55,5 +63,4 @@ public class EmploymentPeriodEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "termination_reason", length = 50)
     private TerminationReason terminationReason;
-
 }

@@ -18,57 +18,58 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.AccessLevel;
+
 
 @Entity
-@Table (name = "employee")
+@Table(name = "employee")
 @Getter
-@Setter
-@NoArgsConstructor()
-public class EmployeeEntity extends AuditableEntity{
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class EmployeeEntity extends AuditableEntity {
 
-    @Id 
+    @Id
+    @Column(nullable = false, updatable = false)
     private UUID id;
-    @Column (name = "first_name", nullable = false)
+
+    @Column(name = "first_name", nullable = false, length = 100)
     private String firstName;
-    @Column (name = "last_name", nullable = false)
+
+    @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
-    @Column (name = "email", nullable = false, unique = true)
+
+    @Column(name = "email", nullable = false, unique = true, length = 254)
     private String email;
-    @Column (name = "phone_number", nullable = false)
+
+    @Column(name = "phone_number", nullable = false, length = 8)
     private String phoneNumber;
+
     @Enumerated(EnumType.STRING)
-    @Column (name = "gender", nullable = false)
+    @Column(nullable = false, length = 20)
     private Gender gender;
-    @Column (name = "birth_date", nullable = false)
+
+    @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
-    @Column (name = "address_line", nullable = false)
+
+    @Column(name = "address_line", nullable = false, length = 150)
     private String addressLine;
-    @Column (name = "district_id", nullable = false)
-    private String districtId;
-    @Column (name = "job_title", nullable = false)
-    private String jobTitle;
-    @Column (name = "base_salary", nullable = false, precision = 10, scale = 2)
-    private BigDecimal baseSalary;
-    @Enumerated(EnumType.STRING)
-    @Column (name = "contract_type", nullable = false)
-    private ContractType contractType;
-    @Column (name = "dui", nullable = false, unique = true)
+
+    @Column(name = "district_id", nullable = false)
+    private UUID districtId;
+
+    @Column(nullable = false, unique = true, length = 9)
     private String dui;
-    @Column (name = "nit", nullable = true, unique = true)
+
+    @Column(unique = true, length = 17)
     private String nit;
-    @Column (name = "isss", nullable = true, unique = true)
+
+    @Column(unique = true, length = 9)
     private String isss;
-    @Column (name = "nup", nullable = true, unique = true)
+
+    @Column(unique = true, length = 9)
     private String nup;
+
     @Enumerated(EnumType.STRING)
-    @Column (name = "pension_fund_institution", nullable = false)
+    @Column(name = "pension_fund_institution", nullable = false, length = 30)
     private PensionFundInstitution pensionFundInstitution;
-    @Column (name = "hire_date", nullable = false)
-    private LocalDate hireDate;
-    @Column (name = "termination_date", nullable = true)
-    private LocalDate terminationDate;
-    @Enumerated(EnumType.STRING)
-    @Column (name = "status", nullable = false)
-    private EmployeeStatus status;
+
 }
