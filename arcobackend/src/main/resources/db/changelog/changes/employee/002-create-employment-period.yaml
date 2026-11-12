@@ -1,4 +1,3 @@
-
 databaseChangeLog:
   - changeSet:
       id: 002-create-employment-period
@@ -7,7 +6,6 @@ databaseChangeLog:
         - createTable:
             tableName: employment_period
             columns:
-              # Primary key
               - column:
                   name: employment_id
                   type: UUID
@@ -16,14 +14,12 @@ databaseChangeLog:
                     primaryKeyName: pk_employment_period
                     nullable: false
 
-              # Employee reference
               - column:
                   name: employee_id
                   type: UUID
                   constraints:
                     nullable: false
 
-              # Employment information
               - column:
                   name: start_date
                   type: DATE
@@ -35,24 +31,6 @@ databaseChangeLog:
                   type: DATE
 
               - column:
-                  name: job_title
-                  type: VARCHAR(100)
-                  constraints:
-                    nullable: false
-
-              - column:
-                  name: contract_type
-                  type: VARCHAR(30)
-                  constraints:
-                    nullable: false
-
-              - column:
-                  name: base_salary
-                  type: NUMERIC(12,2)
-                  constraints:
-                    nullable: false
-
-              - column:
                   name: status
                   type: VARCHAR(30)
                   constraints:
@@ -61,6 +39,27 @@ databaseChangeLog:
               - column:
                   name: termination_reason
                   type: VARCHAR(50)
+
+              # Audit fields
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_by
+                  type: UUID
+
+              - column:
+                  name: updated_by
+                  type: UUID
 
         # Foreign key
         - addForeignKeyConstraint:
@@ -81,13 +80,13 @@ databaseChangeLog:
 
         # Check constraints
         - sql:
-            sql: >
+            sql: |
               ALTER TABLE employment_period
               ADD CONSTRAINT chk_employment_dates
               CHECK (end_date IS NULL OR end_date >= start_date);
 
         - sql:
-            sql: >
+            sql: |
               ALTER TABLE employment_period
               ADD CONSTRAINT chk_employment_status
               CHECK (
@@ -102,7 +101,7 @@ databaseChangeLog:
 
         # Only one active employment period per employee
         - sql:
-            sql: >
+            sql: |
               CREATE UNIQUE INDEX uk_employment_active_employee
               ON employment_period (employee_id)
               WHERE status = 'ACTIVE';

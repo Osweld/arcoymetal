@@ -10,4 +10,8 @@ public record EmploymentId(UUID value) {
         Objects.requireNonNull(value,"EmploymentId value cannot be null");
     }
 
+    public static EmploymentId generate() {
+        return new EmploymentId(UUID.randomUUID());
+    }
+
 }

@@ -7,7 +7,7 @@ import java.util.UUID;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.Gender;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.PensionFundInstitution;
 import com.arcoymetal.arcobackend.employee.internal.domain.employment.ContractType;
-import com.arcoymetal.arcobackend.employee.internal.domain.employment.EmployeeStatus;
+import com.arcoymetal.arcobackend.employee.internal.domain.employment.EmploymentStatus;
 import com.arcoymetal.arcobackend.shared.infrastructure.persistence.entity.AuditableEntity;
 
 import jakarta.persistence.Column;

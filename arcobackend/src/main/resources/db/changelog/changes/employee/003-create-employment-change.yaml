@@ -1,0 +1,86 @@
+
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-employment-change
+      author: arcobackend
+      changes:
+        - createTable:
+            tableName: employment_change
+            columns:
+              - column:
+                  name: employment_change_id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_employment_change
+                    nullable: false
+
+              - column:
+                  name: employment_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: job_title
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: contract_type
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: base_salary
+                  type: DECIMAL(12,2)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: effective_from
+                  type: DATE
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_by
+                  type: UUID
+
+              - column:
+                  name: updated_by
+                  type: UUID
+
+        - addForeignKeyConstraint:
+            baseTableName: employment_change
+            baseColumnNames: employment_id
+            constraintName: fk_employment_change_period
+            referencedTableName: employment_period
+            referencedColumnNames: employment_id
+            onDelete: RESTRICT
+
+        - addUniqueConstraint:
+            tableName: employment_change
+            columnNames: employment_id, effective_from
+            constraintName: uk_employment_change_effective_date
+
+        - createIndex:
+            tableName: employment_change
+            indexName: idx_employment_change_period
+            columns:
+              - column:
+                  name: employment_id

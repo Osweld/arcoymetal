@@ -1,12 +1,11 @@
 package com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.entity;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import com.arcoymetal.arcobackend.employee.internal.domain.employment.ContractType;
-import com.arcoymetal.arcobackend.employee.internal.domain.employment.EmployeeStatus;
+import com.arcoymetal.arcobackend.employee.internal.domain.employment.EmploymentStatus;
 import com.arcoymetal.arcobackend.employee.internal.domain.employment.TerminationReason;
+import com.arcoymetal.arcobackend.shared.infrastructure.persistence.entity.AuditableEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -31,7 +30,7 @@ import lombok.AccessLevel;
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class EmploymentPeriodEntity {
+public class EmploymentPeriodEntity extends AuditableEntity {
 
     @Id
     @Column(name = "employment_id", nullable = false, updatable = false)
@@ -46,19 +45,9 @@ public class EmploymentPeriodEntity {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    @Column(name = "job_title", nullable = false, length = 100)
-    private String jobTitle;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "contract_type", nullable = false, length = 30)
-    private ContractType contractType;
-
-    @Column(name = "base_salary", nullable = false, precision = 12, scale = 2)
-    private BigDecimal baseSalary;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 30)
-    private EmployeeStatus status;
+    private EmploymentStatus status;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "termination_reason", length = 50)

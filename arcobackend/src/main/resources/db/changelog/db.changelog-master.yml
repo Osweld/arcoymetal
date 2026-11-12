@@ -18,6 +18,9 @@ databaseChangeLog:
   - include:
       file: changes/employee/002-create-employment-period.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/employee/003-create-employment-change.yaml
+      relativeToChangelogFile: true
 
   - include:
       file: changes/identityaccess/001-create-users.yaml

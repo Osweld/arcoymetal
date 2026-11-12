@@ -7,5 +7,5 @@ import com.arcoymetal.arcobackend.employee.internal.domain.employee.Employee;
 
 public interface EmployeeRepository {
 
-
+    Employee save(Employee employee);
 }

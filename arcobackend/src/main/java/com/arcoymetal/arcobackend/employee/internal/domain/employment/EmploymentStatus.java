@@ -1,8 +1,7 @@
 package com.arcoymetal.arcobackend.employee.internal.domain.employment;
 
-public enum EmployeeStatus {
+public enum EmploymentStatus {
     ACTIVE,
-    INACTIVE,
     TERMINATED
 
 }
