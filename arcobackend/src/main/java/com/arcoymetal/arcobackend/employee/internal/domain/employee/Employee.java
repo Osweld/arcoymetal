@@ -2,26 +2,21 @@ package com.arcoymetal.arcobackend.employee.internal.domain.employee;
 
 import java.util.Objects;
 
-import com.arcoymetal.arcobackend.employee.internal.domain.employment.BaseSalary;
-import com.arcoymetal.arcobackend.employee.internal.domain.employment.ContractType;
-import com.arcoymetal.arcobackend.employee.internal.domain.employment.EmploymentStatus;
-import com.arcoymetal.arcobackend.employee.internal.domain.employment.StartDate;
-import com.arcoymetal.arcobackend.employee.internal.domain.employment.JobTitle;
-import com.arcoymetal.arcobackend.employee.internal.domain.employment.EndDate;
 
 public class Employee {
 
     private final EmployeeId employeeId;
-    private Name name;
-    private Email email;
-    private PhoneNumber phoneNumber;
-    private Gender gender;
-    private BirthDate birthDate;
-    private Address address;
-    private DUI dui;
-    private NIT nit;
-    private ISSS isss;
-    private NUP nup;
+    private final Name name;
+    private final Email email;
+    private final PhoneNumber phoneNumber;
+    private final Gender gender;
+    private final BirthDate birthDate;
+    private final Address address;
+    private final DUI dui;
+    private final NIT nit;
+    private final ISSS isss;
+    private final NUP nup;
+    private final PensionFundInstitution pensionFundInstitution;
 
     private Employee(
             EmployeeId employeeId,
@@ -34,7 +29,8 @@ public class Employee {
             DUI dui,
             NIT nit,
             ISSS isss,
-            NUP nup
+            NUP nup,
+            PensionFundInstitution pensionFundInstitution
     ) {
         this.employeeId = Objects.requireNonNull(employeeId, "Employee ID cannot be null");
         this.name = Objects.requireNonNull(name, "Name cannot be null");
@@ -44,10 +40,98 @@ public class Employee {
         this.birthDate = Objects.requireNonNull(birthDate, "Birth date cannot be null");
         this.address = Objects.requireNonNull(address, "Address cannot be null");
         this.dui = Objects.requireNonNull(dui, "DUI cannot be null");
-        this.nit = Objects.requireNonNull(nit, "NIT cannot be null");
-        this.isss = Objects.requireNonNull(isss, "ISSS cannot be null");
-        this.nup = Objects.requireNonNull(nup, "NUP cannot be null");
+        this.nit = nit;
+        this.isss = isss;
+        this.nup = nup;
+        this.pensionFundInstitution = Objects.requireNonNull(pensionFundInstitution, "Pension Fund Institution cannot be null");
     }
+
+    public static Employee create(
+            EmployeeId employeeId,
+            Name name,
+            Email email,
+            PhoneNumber phoneNumber,
+            Gender gender,
+            BirthDate birthDate,
+            Address address,
+            DUI dui,
+            NIT nit,
+            ISSS isss,
+            NUP nup,
+            PensionFundInstitution pensionFundInstitution
+    ) {
+        return new Employee(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup, pensionFundInstitution);
+    }
+
+    public static Employee reconstitute(
+            EmployeeId employeeId,
+            Name name,
+            Email email,
+            PhoneNumber phoneNumber,
+            Gender gender,
+            BirthDate birthDate,
+            Address address,
+            DUI dui,
+            NIT nit,
+            ISSS isss,
+            NUP nup,
+            PensionFundInstitution pensionFundInstitution
+    ) {
+        return new Employee(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup, pensionFundInstitution);
+    }
+
+
+
+    public EmployeeId getEmployeeId() {
+        return employeeId;
+    }
+
+    public Name getName() {
+        return name;
+    }
+
+    public Email getEmail() {
+        return email;
+    }
+
+    public PhoneNumber getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public Gender getGender() {
+        return gender;
+    }
+
+    public BirthDate getBirthDate() {
+        return birthDate;
+    }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public DUI getDui() {
+        return dui;
+    }
+
+    public NIT getNit() {
+        return nit;
+    }
+
+    public ISSS getIsss() {
+        return isss;
+    }
+
+    public NUP getNup() {
+        return nup;
+    }
+
+
+    public PensionFundInstitution getPensionFundInstitution() {
+        return pensionFundInstitution;
+    }
+
+    
 
 
 

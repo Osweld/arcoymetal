@@ -1,13 +1,10 @@
 package com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.entity;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.Gender;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.PensionFundInstitution;
-import com.arcoymetal.arcobackend.employee.internal.domain.employment.ContractType;
-import com.arcoymetal.arcobackend.employee.internal.domain.employment.EmploymentStatus;
 import com.arcoymetal.arcobackend.shared.infrastructure.persistence.entity.AuditableEntity;
 
 import jakarta.persistence.Column;
@@ -19,12 +16,14 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 
 
 @Entity
 @Table(name = "employee")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor()
 public class EmployeeEntity extends AuditableEntity {
 
     @Id
