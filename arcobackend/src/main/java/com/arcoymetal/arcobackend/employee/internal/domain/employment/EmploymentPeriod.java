@@ -8,11 +8,11 @@ import com.arcoymetal.arcobackend.employee.internal.domain.employee.EmployeeId;
 public class EmploymentPeriod {
     private final EmploymentId employmentId;
     private final EmployeeId employeeId;
-    private StartDate startDate;
-    private EndDate endDate;
-    private EmploymentStatus status;
-    private TerminationReason terminationReason;
-    private List<EmploymentChange> employmentChanges;
+    private final StartDate startDate;
+    private final EndDate endDate;
+    private final EmploymentStatus status;
+    private final TerminationReason terminationReason;
+    private final List<EmploymentChange> employmentChanges;
 
     private EmploymentPeriod(
             EmploymentId employmentId,
@@ -43,6 +43,51 @@ public class EmploymentPeriod {
     ) {
         return new EmploymentPeriod(employmentId, employeeId, startDate, endDate, status, terminationReason, employmentChanges);
     }
+
+    public static EmploymentPeriod reconstitute(
+            EmploymentId employmentId,
+            EmployeeId employeeId,
+            StartDate startDate,
+            EndDate endDate,
+            EmploymentStatus status,
+            TerminationReason terminationReason,
+            List<EmploymentChange> employmentChanges
+    ) {
+        return new EmploymentPeriod(employmentId, employeeId, startDate, endDate, status, terminationReason, employmentChanges);
+    }
+
+    public EmploymentId getEmploymentId() {
+        return employmentId;
+    }
+
+    public EmployeeId getEmployeeId() {
+        return employeeId;
+    }
+
+    public StartDate getStartDate() {
+        return startDate;
+    }
+
+    public EndDate getEndDate() {
+        return endDate;
+    }
+
+    public EmploymentStatus getStatus() {
+        return status;
+    }
+
+    public TerminationReason getTerminationReason() {
+        return terminationReason;
+    }
+
+    public List<EmploymentChange> getEmploymentChanges() {
+        return employmentChanges;
+    }
+
+
+
+
+    
 
 
 }

@@ -63,6 +63,23 @@ public class Employee {
         return new Employee(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup, pensionFundInstitution);
     }
 
+    public static Employee update(
+            EmployeeId employeeId,
+            Name name,
+            Email email,
+            PhoneNumber phoneNumber,
+            Gender gender,
+            BirthDate birthDate,
+            Address address,
+            DUI dui,
+            NIT nit,
+            ISSS isss,
+            NUP nup,
+            PensionFundInstitution pensionFundInstitution
+    ) {
+        return new Employee(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup, pensionFundInstitution);
+    }
+
     public static Employee reconstitute(
             EmployeeId employeeId,
             Name name,
