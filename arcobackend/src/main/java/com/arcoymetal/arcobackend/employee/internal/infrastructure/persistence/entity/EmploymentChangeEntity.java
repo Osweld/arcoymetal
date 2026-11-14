@@ -18,6 +18,7 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 
 @Entity
 @Table(
@@ -37,6 +38,7 @@ import lombok.AccessLevel;
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor()
 public class EmploymentChangeEntity extends AuditableEntity {
 
     @Id

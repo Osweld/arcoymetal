@@ -1,5 +1,6 @@
 package com.arcoymetal.arcobackend.employee.internal.application.service;
 
+import java.time.Clock;
 import java.util.Objects;
 
 import org.springframework.stereotype.Service;
@@ -24,58 +25,50 @@ import com.arcoymetal.arcobackend.employee.internal.domain.employee.PhoneNumber;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
-@Service 
-@RequiredArgsConstructor 
+@Service
+@RequiredArgsConstructor
 public class UpdadeEmployeeService implements UpdateEmployeeUseCase {
-    
+
     private final EmployeeRepository employeeRepository;
-    
+    private final Clock clock;
+
     @Override
-    @Transactional 
+    @Transactional
     public EmployeeId updateEmployee(UpdateEmployeeCommand command) {
 
-        Objects.requireNonNull(command,"UpdateEmployeeCommand cannot be null");
+        Objects.requireNonNull(command, "UpdateEmployeeCommand cannot be null");
 
         Employee existingEmployee = employeeRepository.findById(command.employeeId());
 
-        Employee updatedEmployee = toDomain(command, existingEmployee.getEmployeeId());
+        Employee updatedEmployee = Employee.update(
+                existingEmployee.getEmployeeId(),
+                new Name(command.firstName(), command.lastName()),
+                new Email(command.email()),
+                new PhoneNumber(command.phoneNumber()),
+                command.gender(),
+                new BirthDate(command.birthDate()),
+                new Address(new AddressLine(command.addressLine()), new DistrictId(command.districtId())),
+                new DUI(command.dui()),
+                command.nit() != null ? new NIT(command.nit()) : null,
+                command.isss() != null ? new ISSS(command.isss()) : null,
+                command.nup() != null ? new NUP(command.nup()) : null,
+                command.pensionFundInstitution(),
+                clock);
 
-
-        if (!existingEmployee.getEmail().equals(updatedEmployee.getEmail()) && employeeRepository.existsByEmail(updatedEmployee.getEmail().value())) {
+        if (!updatedEmployee.getEmail().equals(existingEmployee.getEmail())
+                && employeeRepository.existsByEmail(updatedEmployee.getEmail().value())) {
             throw new IllegalArgumentException("An employee with the provided email already exists.");
         }
 
-        if (!existingEmployee.getDui().equals(updatedEmployee.getDui()) && employeeRepository.existsByDui(updatedEmployee.getDui().value())) {
+        if (!updatedEmployee.getDui().equals(existingEmployee.getDui())
+                && employeeRepository.existsByDui(updatedEmployee.getDui().value())) {
             throw new IllegalArgumentException("An employee with the provided DUI already exists.");
         }
-
-
 
         employeeRepository.save(updatedEmployee);
 
         return updatedEmployee.getEmployeeId();
-       
 
-    }
-
-
-
-     private static Employee toDomain(UpdateEmployeeCommand command, EmployeeId employeeId) {
-
-        return Employee.update(
-           employeeId,
-           new Name(command.firstName(), command.lastName()),
-           new Email(command.email()),
-           new PhoneNumber(command.phoneNumber()),
-           command.gender(),
-           new BirthDate(command.birthDate()),
-           new Address(new AddressLine(command.addressLine()), new DistrictId(command.districtId())),
-           new DUI(command.dui()),
-           command.nit() != null ? new NIT(command.nit()) : null,
-           command.isss() != null ? new ISSS(command.isss()) : null,
-           command.nup() != null ? new NUP(command.nup()) : null,
-           command.pensionFundInstitution()
-        );
     }
 
 }

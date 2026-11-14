@@ -13,7 +13,7 @@ import com.arcoymetal.arcobackend.employee.internal.domain.employment.StartDate;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.entity.EmploymentPeriodEntity;
 
 @Component
-public class EmploymentPeriodMapper {
+public class EmploymentPeriodPersistenceMapper {
 
     public EmploymentPeriodEntity toEntity(EmploymentPeriod employmentPeriod) {
         return new EmploymentPeriodEntity(

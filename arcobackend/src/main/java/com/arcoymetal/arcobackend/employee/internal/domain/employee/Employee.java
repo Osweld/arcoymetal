@@ -1,7 +1,8 @@
 package com.arcoymetal.arcobackend.employee.internal.domain.employee;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.Objects;
-
 
 public class Employee {
 
@@ -30,8 +31,7 @@ public class Employee {
             NIT nit,
             ISSS isss,
             NUP nup,
-            PensionFundInstitution pensionFundInstitution
-    ) {
+            PensionFundInstitution pensionFundInstitution) {
         this.employeeId = Objects.requireNonNull(employeeId, "Employee ID cannot be null");
         this.name = Objects.requireNonNull(name, "Name cannot be null");
         this.email = Objects.requireNonNull(email, "Email cannot be null");
@@ -43,7 +43,8 @@ public class Employee {
         this.nit = nit;
         this.isss = isss;
         this.nup = nup;
-        this.pensionFundInstitution = Objects.requireNonNull(pensionFundInstitution, "Pension Fund Institution cannot be null");
+        this.pensionFundInstitution = Objects.requireNonNull(pensionFundInstitution,
+                "Pension Fund Institution cannot be null");
     }
 
     public static Employee create(
@@ -58,9 +59,21 @@ public class Employee {
             NIT nit,
             ISSS isss,
             NUP nup,
-            PensionFundInstitution pensionFundInstitution
-    ) {
-        return new Employee(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup, pensionFundInstitution);
+            PensionFundInstitution pensionFundInstitution,
+            Clock clock) {
+
+        LocalDate today = LocalDate.now(clock);
+
+        if (birthDate.value().isAfter(today)) {
+            throw new IllegalArgumentException("Birth date cannot be in the future");
+        }
+
+        if (birthDate.ageAt(today) < 18) {
+            throw new IllegalArgumentException("Employee must be at least 18 years old");
+        }
+
+        return new Employee(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup,
+                pensionFundInstitution);
     }
 
     public static Employee update(
@@ -75,9 +88,17 @@ public class Employee {
             NIT nit,
             ISSS isss,
             NUP nup,
-            PensionFundInstitution pensionFundInstitution
-    ) {
-        return new Employee(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup, pensionFundInstitution);
+            PensionFundInstitution pensionFundInstitution,
+            Clock clock) {
+        LocalDate today = LocalDate.now(clock);
+        if (birthDate.value().isAfter(today)) {
+            throw new IllegalArgumentException("Birth date cannot be in the future");
+        }
+        if (birthDate.ageAt(today) < 18) {
+            throw new IllegalArgumentException("Employee must be at least 18 years old");
+        }
+        return new Employee(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup,
+                pensionFundInstitution);
     }
 
     public static Employee reconstitute(
@@ -92,12 +113,10 @@ public class Employee {
             NIT nit,
             ISSS isss,
             NUP nup,
-            PensionFundInstitution pensionFundInstitution
-    ) {
-        return new Employee(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup, pensionFundInstitution);
+            PensionFundInstitution pensionFundInstitution) {
+        return new Employee(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup,
+                pensionFundInstitution);
     }
-
-
 
     public EmployeeId getEmployeeId() {
         return employeeId;
@@ -143,13 +162,8 @@ public class Employee {
         return nup;
     }
 
-
     public PensionFundInstitution getPensionFundInstitution() {
         return pensionFundInstitution;
     }
-
-    
-
-
 
 }

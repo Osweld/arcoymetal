@@ -1,5 +1,6 @@
 package com.arcoymetal.arcobackend.employee.internal.application.service;
 
+import java.time.Clock;
 import java.util.Objects;
 
 import org.springframework.stereotype.Service;
@@ -24,20 +25,18 @@ import com.arcoymetal.arcobackend.employee.internal.domain.employee.PhoneNumber;
 
 import lombok.RequiredArgsConstructor;
 
-@Service 
-@RequiredArgsConstructor 
+@Service
+@RequiredArgsConstructor
 public class CreateEmployeeService implements CreateEmployeeUseCase {
 
     private final EmployeeRepository employeeRepository;
-    
-    
-    
-    
+    private final Clock clock;
+
     @Override
-    @Transactional 
+    @Transactional
     public EmployeeId createEmployee(CreateEmployeeCommand command) {
-        
-        Objects.requireNonNull(command,"CreateEmployeeCommand cannot be null");
+
+        Objects.requireNonNull(command, "CreateEmployeeCommand cannot be null");
 
         if (employeeRepository.existsByEmail(command.email())) {
             throw new IllegalArgumentException("An employee with the provided email already exists.");
@@ -46,31 +45,24 @@ public class CreateEmployeeService implements CreateEmployeeUseCase {
         if (employeeRepository.existsByDui(command.dui())) {
             throw new IllegalArgumentException("An employee with the provided DUI already exists.");
         }
-        
+
         EmployeeId employeeId = EmployeeId.generate();
-        Employee employee = toDomain(command, employeeId);
+        Employee employee = Employee.create(
+                employeeId,
+                new Name(command.firstName(), command.lastName()),
+                new Email(command.email()),
+                new PhoneNumber(command.phoneNumber()),
+                command.gender(),
+                new BirthDate(command.birthDate()),
+                new Address(new AddressLine(command.addressLine()), new DistrictId(command.districtId())),
+                new DUI(command.dui()),
+                command.nit() != null ? new NIT(command.nit()) : null,
+                command.isss() != null ? new ISSS(command.isss()) : null,
+                command.nup() != null ? new NUP(command.nup()) : null,
+                command.pensionFundInstitution(),
+                clock);
         employeeRepository.save(employee);
         return employeeId;
-    }
-
-
-
-    private static Employee toDomain(CreateEmployeeCommand command, EmployeeId employeeId) {
-
-        return Employee.create(
-           employeeId,
-           new Name(command.firstName(), command.lastName()),
-           new Email(command.email()),
-           new PhoneNumber(command.phoneNumber()),
-           command.gender(),
-           new BirthDate(command.birthDate()),
-           new Address(new AddressLine(command.addressLine()), new DistrictId(command.districtId())),
-           new DUI(command.dui()),
-           command.nit() != null ? new NIT(command.nit()) : null,
-           command.isss() != null ? new ISSS(command.isss()) : null,
-           command.nup() != null ? new NUP(command.nup()) : null,
-           command.pensionFundInstitution()
-        );
     }
 
 }

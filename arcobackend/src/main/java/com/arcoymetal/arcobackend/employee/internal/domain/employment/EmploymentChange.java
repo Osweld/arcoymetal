@@ -4,28 +4,61 @@ import java.util.Objects;
 
 public class EmploymentChange {
 
-    private final EmploymentChangeId id;
+    private final EmploymentChangeId employmentChangeId;
+    private final EmploymentId employmentId;
     private final JobTitle jobTitle;
     private final ContractType contractType;
     private final BaseSalary baseSalary;
     private final EffectiveFrom effectiveFrom;
 
-public EmploymentChange(
-            EmploymentChangeId id,
+private EmploymentChange(
+            EmploymentChangeId employmentChangeId,
+            EmploymentId employmentId,
             JobTitle jobTitle,
             ContractType contractType,
             BaseSalary baseSalary,
             EffectiveFrom effectiveFrom
     ) {
-        this.id = Objects.requireNonNull(id, "EmploymentChangeId cannot be null");
+        this.employmentChangeId = Objects.requireNonNull(employmentChangeId, "EmploymentChangeId cannot be null");
+        this.employmentId = Objects.requireNonNull(employmentId, "EmploymentId cannot be null");
         this.jobTitle = Objects.requireNonNull(jobTitle, "JobTitle cannot be null");
         this.contractType = Objects.requireNonNull(contractType, "ContractType cannot be null");
         this.baseSalary = Objects.requireNonNull(baseSalary, "BaseSalary cannot be null");
         this.effectiveFrom = Objects.requireNonNull(effectiveFrom, "EffectiveFrom cannot be null");
     }
 
-    public EmploymentChangeId getId() {
-        return id;
+    public static EmploymentChange create(
+            EmploymentChangeId employmentChangeId,
+            EmploymentId employmentId,
+            JobTitle jobTitle,
+            ContractType contractType,
+            BaseSalary baseSalary,
+            EffectiveFrom effectiveFrom
+    ) {
+        return new EmploymentChange(employmentChangeId, employmentId, jobTitle, contractType, baseSalary, effectiveFrom);
+    }
+
+    public static EmploymentChange reconstitute(
+            EmploymentChangeId employmentChangeId,
+            EmploymentId employmentId,
+            JobTitle jobTitle,
+            ContractType contractType,
+            BaseSalary baseSalary,
+            EffectiveFrom effectiveFrom
+    ) {
+        return new EmploymentChange(employmentChangeId, employmentId, jobTitle, contractType, baseSalary, effectiveFrom);
+    }
+
+
+
+
+
+    public EmploymentChangeId getEmploymentChangeId() {
+        return employmentChangeId;
+    }
+
+    public EmploymentId getEmploymentId() {
+        return employmentId;
     }
 
     public JobTitle getJobTitle() {
