@@ -36,12 +36,9 @@ public class EmploymentPeriod {
             EmploymentId employmentId,
             EmployeeId employeeId,
             StartDate startDate,
-            EndDate endDate,
-            EmploymentStatus status,
-            TerminationReason terminationReason,
             List<EmploymentChange> employmentChanges
     ) {
-        return new EmploymentPeriod(employmentId, employeeId, startDate, endDate, status, terminationReason, employmentChanges);
+        return new EmploymentPeriod(employmentId, employeeId, startDate, null, EmploymentStatus.ACTIVE, null, employmentChanges);
     }
 
     public static EmploymentPeriod reconstitute(

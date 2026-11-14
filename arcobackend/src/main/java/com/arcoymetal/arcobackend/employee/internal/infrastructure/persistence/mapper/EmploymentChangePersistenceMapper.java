@@ -1,5 +1,7 @@
 package com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.mapper;
 
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 
 import com.arcoymetal.arcobackend.employee.internal.domain.employment.BaseSalary;
@@ -33,6 +35,18 @@ public class EmploymentChangePersistenceMapper {
             new BaseSalary(entity.getBaseSalary()),
             new EffectiveFrom(entity.getEffectiveFrom())
         );
+    }
+
+    public List<EmploymentChangeEntity> toEmploymentChangeEntities(List<EmploymentChange> employmentChanges) {
+        return employmentChanges.stream()
+                .map(this::toEntity)
+                .toList();
+    }
+
+    public List<EmploymentChange> toDomainList(List<EmploymentChangeEntity> entities) {
+        return entities.stream()
+                .map(this::toDomain)
+                .toList();
     }
 
 }

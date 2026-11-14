@@ -48,4 +48,10 @@ public class EmployeePersistenceAdapter  implements EmployeeRepository {
     }
 
 
+    @Override
+    public boolean existsById(UUID employeeId) {
+        return springDataEmployeeRepository.existsById(employeeId);
+    }
+
+
 }

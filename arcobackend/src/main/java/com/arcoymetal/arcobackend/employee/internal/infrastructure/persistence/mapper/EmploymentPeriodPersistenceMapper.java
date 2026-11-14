@@ -20,7 +20,7 @@ public class EmploymentPeriodPersistenceMapper {
                 employmentPeriod.getEmploymentId().value(),
                 employmentPeriod.getEmployeeId().value(),
                 employmentPeriod.getStartDate().value(),
-                employmentPeriod.getEndDate().value() != null ? employmentPeriod.getEndDate().value() : null,
+                employmentPeriod.getEndDate() != null ? employmentPeriod.getEndDate().value() : null,
                 employmentPeriod.getStatus(),
                 employmentPeriod.getTerminationReason() != null ? employmentPeriod.getTerminationReason() : null);
     }
