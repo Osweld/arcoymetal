@@ -62,6 +62,9 @@ public class Employee {
             PensionFundInstitution pensionFundInstitution,
             Clock clock) {
 
+        Objects.requireNonNull(birthDate, "Birth date cannot be null");
+        Objects.requireNonNull(clock, "Clock cannot be null");
+
         LocalDate today = LocalDate.now(clock);
 
         if (birthDate.value().isAfter(today)) {
@@ -90,6 +93,9 @@ public class Employee {
             NUP nup,
             PensionFundInstitution pensionFundInstitution,
             Clock clock) {
+        Objects.requireNonNull(birthDate, "Birth date cannot be null");
+        Objects.requireNonNull(clock, "Clock cannot be null");
+
         LocalDate today = LocalDate.now(clock);
         if (birthDate.value().isAfter(today)) {
             throw new IllegalArgumentException("Birth date cannot be in the future");

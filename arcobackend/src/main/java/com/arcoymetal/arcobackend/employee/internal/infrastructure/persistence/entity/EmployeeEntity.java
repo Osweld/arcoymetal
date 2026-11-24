@@ -52,7 +52,7 @@ public class EmployeeEntity extends AuditableEntity {
     @Column(name = "address_line", nullable = false, length = 150)
     private String addressLine;
 
-    @Column(name = "district_id", nullable = false)
+    @Column(name = "district_id", nullable = false, length = 10)
     private String districtId;
 
     @Column(nullable = false, unique = true, length = 9)

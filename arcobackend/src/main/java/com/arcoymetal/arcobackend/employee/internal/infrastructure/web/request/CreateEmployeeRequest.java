@@ -20,7 +20,7 @@ public record CreateEmployeeRequest(
         @NotNull Gender gender,
         @NotNull @Past LocalDate birthDate,
         @NotBlank @Size(min = 1, max = 150) String addressLine,
-        @NotBlank @Size(min = 1, max = 100) String districtId,
+        @NotBlank @Size(min = 1, max = 10) String districtId,
         @NotBlank @Pattern(regexp = "^(?:\\d{9}|\\d{8}-\\d)$") String dui,
         @Pattern(regexp = "^(?:\\d{14}|\\d{4}-\\d{6}-\\d{3}-\\d)$") String nit,
         @Pattern(regexp = "^(?:\\d{9}|\\d{8}-\\d)$") String isss,

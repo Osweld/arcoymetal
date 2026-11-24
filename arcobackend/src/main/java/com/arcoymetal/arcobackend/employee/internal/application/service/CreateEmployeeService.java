@@ -22,6 +22,7 @@ import com.arcoymetal.arcobackend.employee.internal.domain.employee.NIT;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.NUP;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.Name;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.PhoneNumber;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.DuplicateEmployeeException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,14 +39,6 @@ public class CreateEmployeeService implements CreateEmployeeUseCase {
 
         Objects.requireNonNull(command, "CreateEmployeeCommand cannot be null");
 
-        if (employeeRepository.existsByEmail(command.email())) {
-            throw new IllegalArgumentException("An employee with the provided email already exists.");
-        }
-
-        if (employeeRepository.existsByDui(command.dui())) {
-            throw new IllegalArgumentException("An employee with the provided DUI already exists.");
-        }
-
         EmployeeId employeeId = EmployeeId.generate();
         Employee employee = Employee.create(
                 employeeId,
@@ -61,6 +54,15 @@ public class CreateEmployeeService implements CreateEmployeeUseCase {
                 command.nup() != null ? new NUP(command.nup()) : null,
                 command.pensionFundInstitution(),
                 clock);
+
+        if (employeeRepository.existsByEmail(employee.getEmail().value())) {
+            throw new DuplicateEmployeeException("An employee with the provided email already exists.");
+        }
+
+        if (employeeRepository.existsByDui(employee.getDui().value())) {
+            throw new DuplicateEmployeeException("An employee with the provided DUI already exists.");
+        }
+
         employeeRepository.save(employee);
         return employeeId;
     }

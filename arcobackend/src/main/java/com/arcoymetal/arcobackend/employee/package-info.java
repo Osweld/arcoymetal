@@ -1,4 +1,4 @@
 @org.springframework.modulith.ApplicationModule(
-    allowedDependencies = "shared::persistence"
+    allowedDependencies = { "shared::persistence", "shared::web" }
 )
 package com.arcoymetal.arcobackend.employee;

@@ -9,6 +9,7 @@ public record NUP(String value) {
     public NUP {
 
         Objects.requireNonNull(value, "NUP cannot be null");
+        value = value.strip();
 
         if (!value.matches(NUP_PATTERN)) {
             throw new IllegalArgumentException("NUP must contain 9 digits, optionally separated by hyphens");

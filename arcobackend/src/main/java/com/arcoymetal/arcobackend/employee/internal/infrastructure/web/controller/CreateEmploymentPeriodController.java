@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.arcoymetal.arcobackend.employee.internal.application.command.CreateEmploymentPeriodCommand;
 import com.arcoymetal.arcobackend.employee.internal.application.port.in.CreateEmploymentPeriodUseCase;
-import com.arcoymetal.arcobackend.employee.internal.infrastructure.web.mapper.EmploymenPeriodRequestMapper;
+import com.arcoymetal.arcobackend.employee.internal.infrastructure.web.mapper.EmploymentPeriodRequestMapper;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.web.request.CreateEmploymentPeriodRequest;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.web.response.CreateEmploymentPeriodResponse;
 
@@ -22,12 +22,12 @@ import lombok.RequiredArgsConstructor;
 public class CreateEmploymentPeriodController {
 
     private final CreateEmploymentPeriodUseCase createEmploymentPeriodUseCase;
-    private final EmploymenPeriodRequestMapper employmenPeriodRequestMapper;
+    private final EmploymentPeriodRequestMapper employmentPeriodRequestMapper;
 
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<CreateEmploymentPeriodResponse> createEmploymentPeriod(
             @Valid @RequestBody CreateEmploymentPeriodRequest request) {
-        CreateEmploymentPeriodCommand command = employmenPeriodRequestMapper.toCommand(request);
+        CreateEmploymentPeriodCommand command = employmentPeriodRequestMapper.toCommand(request);
         CreateEmploymentPeriodResponse response = new CreateEmploymentPeriodResponse(
                 createEmploymentPeriodUseCase.createEmploymentPeriod(command).value());
         return new ResponseEntity<>(response, HttpStatus.CREATED);

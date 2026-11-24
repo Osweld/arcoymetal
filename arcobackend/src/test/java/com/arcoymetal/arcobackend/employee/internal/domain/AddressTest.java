@@ -1,4 +1,4 @@
-package com.arcoymetal.arcobackend.employee.internal.domian;
+package com.arcoymetal.arcobackend.employee.internal.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;

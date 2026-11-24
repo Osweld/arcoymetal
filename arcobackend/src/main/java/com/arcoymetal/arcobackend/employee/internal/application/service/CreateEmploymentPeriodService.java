@@ -19,24 +19,30 @@ import com.arcoymetal.arcobackend.employee.internal.domain.employment.Employment
 import com.arcoymetal.arcobackend.employee.internal.domain.employment.EmploymentPeriod;
 import com.arcoymetal.arcobackend.employee.internal.domain.employment.JobTitle;
 import com.arcoymetal.arcobackend.employee.internal.domain.employment.StartDate;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.ActiveEmploymentPeriodAlreadyExistsException;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.EmployeeNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 
-@Service 
-@RequiredArgsConstructor 
+@Service
+@RequiredArgsConstructor
 public class CreateEmploymentPeriodService implements CreateEmploymentPeriodUseCase {
 
     private final EmploymentPeriodRepository employmentPeriodRepository;
     private final EmployeeRepository employeeRepository;
 
     @Override
-    @Transactional 
+    @Transactional
     public EmploymentId createEmploymentPeriod(CreateEmploymentPeriodCommand command) {
-       
-        Objects.requireNonNull(command,"CreateEmploymentPeriodCommand cannot be null");
+
+        Objects.requireNonNull(command, "CreateEmploymentPeriodCommand cannot be null");
 
         if (!employeeRepository.existsById(command.employeeId())) {
-            throw new IllegalArgumentException("Employee with ID " + command.employeeId() + " does not exist.");
+            throw new EmployeeNotFoundException(command.employeeId());
+        }
+
+        if (employmentPeriodRepository.existsActiveByEmployeeId(command.employeeId())) {
+            throw new ActiveEmploymentPeriodAlreadyExistsException(command.employeeId());
         }
 
         EmploymentId employmentId = EmploymentId.generate();

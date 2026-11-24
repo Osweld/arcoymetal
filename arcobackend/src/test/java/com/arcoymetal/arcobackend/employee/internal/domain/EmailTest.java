@@ -1,4 +1,4 @@
-package com.arcoymetal.arcobackend.employee.internal.domian;
+package com.arcoymetal.arcobackend.employee.internal.domain;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -10,4 +10,6 @@ public interface EmploymentPeriodRepository {
 
     EmploymentPeriod findById(UUID employmentId);
 
+    boolean existsActiveByEmployeeId(UUID employeeId);
+
 }

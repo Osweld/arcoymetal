@@ -10,6 +10,7 @@ public record NIT(String value) {
     public NIT {
 
         Objects.requireNonNull(value, "NIT cannot be null");
+        value = value.strip();
 
         if (!NIT_PATTERN.matcher(value).matches()) {
             throw new IllegalArgumentException("NIT must contain 14 digits, optionally separated by hyphens");

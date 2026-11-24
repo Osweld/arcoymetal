@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.util.Objects;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.arcoymetal.arcobackend.employee.internal.application.command.UpdateEmployeeCommand;
 import com.arcoymetal.arcobackend.employee.internal.application.port.in.UpdateEmployeeUseCase;
@@ -21,13 +22,13 @@ import com.arcoymetal.arcobackend.employee.internal.domain.employee.NIT;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.NUP;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.Name;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.PhoneNumber;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.DuplicateEmployeeException;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class UpdadeEmployeeService implements UpdateEmployeeUseCase {
+public class UpdateEmployeeService implements UpdateEmployeeUseCase {
 
     private final EmployeeRepository employeeRepository;
     private final Clock clock;
@@ -57,18 +58,16 @@ public class UpdadeEmployeeService implements UpdateEmployeeUseCase {
 
         if (!updatedEmployee.getEmail().equals(existingEmployee.getEmail())
                 && employeeRepository.existsByEmail(updatedEmployee.getEmail().value())) {
-            throw new IllegalArgumentException("An employee with the provided email already exists.");
+            throw new DuplicateEmployeeException("An employee with the provided email already exists.");
         }
 
         if (!updatedEmployee.getDui().equals(existingEmployee.getDui())
                 && employeeRepository.existsByDui(updatedEmployee.getDui().value())) {
-            throw new IllegalArgumentException("An employee with the provided DUI already exists.");
+            throw new DuplicateEmployeeException("An employee with the provided DUI already exists.");
         }
 
         employeeRepository.save(updatedEmployee);
 
         return updatedEmployee.getEmployeeId();
-
     }
-
 }

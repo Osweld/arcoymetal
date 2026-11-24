@@ -2,7 +2,6 @@ package com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.
 
 
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,7 +13,7 @@ import com.arcoymetal.arcobackend.employee.internal.application.dto.EmployeeDeta
 import com.arcoymetal.arcobackend.employee.internal.application.dto.PageQuery;
 import com.arcoymetal.arcobackend.employee.internal.application.dto.PageResult;
 import com.arcoymetal.arcobackend.employee.internal.application.port.out.EmployeeQueryRepository;
-import com.arcoymetal.arcobackend.employee.internal.infrastructure.exception.EmployeeNotFoundException;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.EmployeeNotFoundException;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.projection.EmployeeDetailsProjection;
 import com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.repository.SpringDataEmployeeRepository;
 
@@ -30,9 +29,8 @@ public class EmployeeQueryRepositoryAdapter implements EmployeeQueryRepository {
     @Override
     public EmployeeDetails findById(UUID employeeId) {
         EmployeeDetailsProjection projection = springDataEmployeeRepository.findProjectedById(employeeId)
-            .orElseThrow(() -> new EmployeeNotFoundException("Employee not found with id: " + employeeId));
+            .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
         return toEmployeeDetails(projection);
-      
     }
 
     @Override
