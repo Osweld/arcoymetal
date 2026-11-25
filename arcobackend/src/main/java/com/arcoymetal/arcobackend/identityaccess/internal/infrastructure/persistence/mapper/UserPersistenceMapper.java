@@ -1,5 +1,7 @@
 package com.arcoymetal.arcobackend.identityaccess.internal.infrastructure.persistence.mapper;
 
+import java.util.HashSet;
+
 import org.springframework.stereotype.Component;
 
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.User;
@@ -9,18 +11,18 @@ import com.arcoymetal.arcobackend.identityaccess.internal.domain.vo.PasswordHash
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.vo.UserId;
 import com.arcoymetal.arcobackend.identityaccess.internal.infrastructure.persistence.entity.UserEntity;
 
-@Component 
+@Component
 public class UserPersistenceMapper {
 
     public UserEntity toEntity(User user) {
-        UserEntity entity = new UserEntity();
-        entity.setId(user.getUserId().value());
-        entity.setEmployeeId(user.getEmployeeId().value());
-        entity.setPasswordHash(user.getPasswordHash().value());
-        entity.setEmail(user.getEmail().value());
-        entity.setRoles(user.getRoles());
-        entity.setStatus(user.getUserStatus());
-        return entity;
+        return new UserEntity(
+                user.getUserId().value(),
+                user.getEmployeeId().value(),
+                user.getPasswordHash().value(),
+                user.getEmail().value(),
+                new HashSet<>(user.getRoles()),
+                user.getUserStatus()
+        );
     }
 
     public User toDomain(UserEntity entity) {
@@ -33,5 +35,4 @@ public class UserPersistenceMapper {
                 entity.getStatus()
         );
     }
-
 }

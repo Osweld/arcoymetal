@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-add-user-audit-actor-columns
+      author: arcobackend
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: created_by
+                  type: UUID
+
+              - column:
+                  name: updated_by
+                  type: UUID

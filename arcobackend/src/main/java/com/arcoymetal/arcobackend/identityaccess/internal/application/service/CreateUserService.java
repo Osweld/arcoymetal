@@ -11,6 +11,8 @@ import com.arcoymetal.arcobackend.identityaccess.internal.application.port.in.Cr
 import com.arcoymetal.arcobackend.identityaccess.internal.application.port.out.PasswordHasher;
 import com.arcoymetal.arcobackend.identityaccess.internal.application.port.out.UserRepository;
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.User;
+import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.DuplicateUserException;
+import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.ReferencedEmployeeNotFoundException;
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.vo.Email;
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.vo.EmployeeId;
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.vo.PasswordHash;
@@ -27,21 +29,27 @@ public class CreateUserService implements CreateUserUseCase {
     private final EmployeeExistenceVerifier employeeExistenceVerifier;
 
     @Override
-    @Transactional 
+    @Transactional
     public UserId createUser(CreateUserCommand command) {
 
         Objects.requireNonNull(command, "CreateUserCommand cannot be null");
 
-        if (!employeeExistenceVerifier.existsByEmployeeId(command.employeeId())) {
-            throw new IllegalArgumentException("Employee with employeeId " + command.employeeId() + " does not exist.");
+        EmployeeId employeeId = new EmployeeId(command.employeeId());
+        Email email = new Email(command.email());
+        if (command.password() == null || command.password().isBlank()) {
+            throw new IllegalArgumentException("Password cannot be null or blank");
         }
 
-        if (userRepository.existsByEmployeeId(command.employeeId())) {
-            throw new IllegalArgumentException("User with employeeId " + command.employeeId() + " already exists.");
+        if (!employeeExistenceVerifier.existsByEmployeeId(employeeId.value())) {
+            throw new ReferencedEmployeeNotFoundException(employeeId.value());
         }
 
-        if (userRepository.existsByEmail(command.email())) {
-            throw new IllegalArgumentException("User with email " + command.email() + " already exists.");
+        if (userRepository.existsByEmployeeId(employeeId.value())) {
+            throw new DuplicateUserException("User with employeeId " + employeeId.value() + " already exists.");
+        }
+
+        if (userRepository.existsByEmail(email.value())) {
+            throw new DuplicateUserException("User with email " + email.value() + " already exists.");
         }
 
         UserId userId = UserId.generate();
@@ -49,12 +57,11 @@ public class CreateUserService implements CreateUserUseCase {
 
         User user = User.create(
                 userId,
-                new EmployeeId(command.employeeId()),
+                employeeId,
                 passwordHash,
-                new Email(command.email()),
+                email,
                 command.roles());
         userRepository.save(user);
         return userId;
     }
-
 }

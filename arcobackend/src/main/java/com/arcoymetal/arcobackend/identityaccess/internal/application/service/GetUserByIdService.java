@@ -1,5 +1,7 @@
 package com.arcoymetal.arcobackend.identityaccess.internal.application.service;
 
+import java.util.Objects;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,17 +12,16 @@ import com.arcoymetal.arcobackend.identityaccess.internal.application.query.GetU
 
 import lombok.RequiredArgsConstructor;
 
-@Service 
-@RequiredArgsConstructor 
+@Service
+@RequiredArgsConstructor
 public class GetUserByIdService implements GetUserByIdUseCase {
 
     private final UserQueryRepository userQueryRepository;
 
-   
-
     @Override
     @Transactional(readOnly = true)
     public UserSummary getUserById(GetUserByIdQuery query) {
+        Objects.requireNonNull(query, "GetUserByIdQuery cannot be null");
         return userQueryRepository.findById(query.userId());
     }
 

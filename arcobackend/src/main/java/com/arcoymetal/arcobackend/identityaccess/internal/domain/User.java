@@ -1,5 +1,7 @@
 package com.arcoymetal.arcobackend.identityaccess.internal.domain;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -28,20 +30,25 @@ public class User {
         this.employeeId = Objects.requireNonNull(employeeId, "EmployeeId cannot be null");
         this.passwordHash = Objects.requireNonNull(passwordHash, "PasswordHash cannot be null");
         this.email = Objects.requireNonNull(email, "Email cannot be null");
-        this.roles = Objects.requireNonNull(roles, "Roles cannot be null");
+        Objects.requireNonNull(roles, "Roles cannot be null");
+        if (roles.isEmpty()) {
+            throw new UserMustHaveAtLeastOneRoleException();
+        }
+        Set<Role> copiedRoles = new HashSet<>();
+        for (Role role : roles) {
+            copiedRoles.add(Objects.requireNonNull(role, "Role cannot be null"));
+        }
+        this.roles = copiedRoles;
         this.userStatus = Objects.requireNonNull(userStatus, "UserStatus cannot be null");
     }
 
     public static User create(UserId userId, EmployeeId employeeId, PasswordHash passwordHash, Email email,
             Set<Role> roles) {
-        if (roles.isEmpty()) {
-            throw new UserMustHaveAtLeastOneRoleException();
-        }
         return new User(userId, employeeId, passwordHash, email, roles, UserStatus.ACTIVE);
     }
 
-    public static User reconstitute(UserId userId, EmployeeId employeeId, PasswordHash passwordHash, Email email, Set<Role> roles,
-            UserStatus userStatus) {
+    public static User reconstitute(UserId userId, EmployeeId employeeId, PasswordHash passwordHash, Email email,
+            Set<Role> roles, UserStatus userStatus) {
         return new User(userId, employeeId, passwordHash, email, roles, userStatus);
     }
 
@@ -56,13 +63,15 @@ public class User {
     public void removeRole(Role role) {
         Objects.requireNonNull(role, "Role cannot be null");
 
-        if (!this.roles.remove(role)) {
+        if (!this.roles.contains(role)) {
             throw new UserDoesNotHaveRoleException(role.toString());
         }
 
-        if (this.roles.isEmpty()) {
+        if (this.roles.size() == 1) {
             throw new UserMustHaveAtLeastOneRoleException();
         }
+
+        this.roles.remove(role);
     }
 
     public UserId getUserId() {
@@ -82,17 +91,10 @@ public class User {
     }
 
     public Set<Role> getRoles() {
-        return roles;
+        return Collections.unmodifiableSet(roles);
     }
 
     public UserStatus getUserStatus() {
         return userStatus;
     }
-
-
-
-    
-    
-
-
 }

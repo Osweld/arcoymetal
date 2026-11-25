@@ -13,6 +13,7 @@ import com.arcoymetal.arcobackend.identityaccess.internal.application.dto.PageQu
 import com.arcoymetal.arcobackend.identityaccess.internal.application.dto.PageResult;
 import com.arcoymetal.arcobackend.identityaccess.internal.application.dto.UserSummary;
 import com.arcoymetal.arcobackend.identityaccess.internal.application.port.out.UserQueryRepository;
+import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.UserNotFoundException;
 import com.arcoymetal.arcobackend.identityaccess.internal.infrastructure.persistence.entity.UserEntity;
 import com.arcoymetal.arcobackend.identityaccess.internal.infrastructure.persistence.repository.SpringDataUserRepository;
 
@@ -65,7 +66,7 @@ public class UserQueryRepositoryAdapter implements UserQueryRepository {
     @Override
     public UserSummary findById(UUID userId) {
         UserEntity userEntity = springDataUserRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+            .orElseThrow(() -> new UserNotFoundException(userId));
 
         return toUserSummary(userEntity);
     }

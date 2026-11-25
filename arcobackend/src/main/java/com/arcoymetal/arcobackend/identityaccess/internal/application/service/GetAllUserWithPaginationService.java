@@ -1,5 +1,7 @@
 package com.arcoymetal.arcobackend.identityaccess.internal.application.service;
 
+import java.util.Objects;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,7 @@ public class GetAllUserWithPaginationService implements GetAllUserWithPagination
     @Override
     @Transactional(readOnly = true)
     public PageResult<UserSummary> getAllUsers(PageQuery pageQuery) {
+        Objects.requireNonNull(pageQuery, "PageQuery cannot be null");
         return userQueryRepository.findAll(pageQuery);
     }
 
