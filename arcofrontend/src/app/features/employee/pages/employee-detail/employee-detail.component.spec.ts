@@ -77,7 +77,11 @@ describe('EmployeeDetailComponent', () => {
           provide: LocationService,
           useValue: {
             getHierarchy: () => of(mockHierarchy),
-            resolveDistrict: () => null,
+            resolveDistrict: () => ({
+              department: mockHierarchy[0],
+              municipality: mockHierarchy[0].municipalities[0],
+              district: mockHierarchy[0].municipalities[0].districts[0],
+            }),
           },
         },
       ],
@@ -87,6 +91,17 @@ describe('EmployeeDetailComponent', () => {
     fixture.detectChanges();
 
     const component = fixture.componentInstance;
+
+    // Verify edit form pre-selects department, municipality, and district in the DOM
+    component.toggleEditMode();
+    fixture.detectChanges();
+    const deptSelect = fixture.nativeElement.querySelector('#edit-dept') as HTMLSelectElement;
+    const munSelect = fixture.nativeElement.querySelector('#edit-mun') as HTMLSelectElement;
+    const distSelect = fixture.nativeElement.querySelector('#edit-dist') as HTMLSelectElement;
+    expect(deptSelect.value).toBe('AH');
+    expect(munSelect.value).toBe('AH01');
+    expect(distSelect.value).toBe('AH0101');
+
     component.toggleEmploymentPeriodForm();
     component.employmentPeriodForm.setValue({
       startDate: '2026-01-15',

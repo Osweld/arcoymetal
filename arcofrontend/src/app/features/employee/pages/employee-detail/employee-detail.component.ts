@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { EmployeeService } from '../../services/employee.service';
@@ -399,8 +399,8 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                   <select
                     id="edit-dept"
                     name="departmentId"
-                    [value]="selectedDepartmentId()"
-                    (change)="onDepartmentChange($any($event.target).value)"
+                    [formControl]="departmentControl"
+                    (change)="onDepartmentChange(departmentControl.value)"
                     class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900"
                   >
                     <option value="">Selecciona...</option>
@@ -417,8 +417,8 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                   <select
                     id="edit-mun"
                     name="municipalityId"
-                    [value]="selectedMunicipalityId()"
-                    (change)="onMunicipalityChange($any($event.target).value)"
+                    [formControl]="municipalityControl"
+                    (change)="onMunicipalityChange(municipalityControl.value)"
                     class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900"
                   >
                     <option value="">Selecciona...</option>
@@ -670,6 +670,8 @@ export class EmployeeDetailComponent implements OnInit {
 
   readonly selectedDepartmentId = signal<string>('');
   readonly selectedMunicipalityId = signal<string>('');
+  readonly departmentControl = new FormControl('', { nonNullable: true });
+  readonly municipalityControl = new FormControl('', { nonNullable: true });
 
   readonly genderLabels = GENDER_LABELS;
   readonly contractLabels = CONTRACT_TYPE_LABELS;
@@ -789,6 +791,7 @@ export class EmployeeDetailComponent implements OnInit {
   onDepartmentChange(deptId: string): void {
     this.selectedDepartmentId.set(deptId);
     this.selectedMunicipalityId.set('');
+    this.municipalityControl.setValue('', { emitEvent: false });
     this.editForm.controls.districtId.setValue('');
   }
 
@@ -895,6 +898,13 @@ export class EmployeeDetailComponent implements OnInit {
     if (resolved) {
       this.selectedDepartmentId.set(resolved.department.id);
       this.selectedMunicipalityId.set(resolved.municipality.id);
+      this.departmentControl.setValue(resolved.department.id, { emitEvent: false });
+      this.municipalityControl.setValue(resolved.municipality.id, { emitEvent: false });
+    } else {
+      this.selectedDepartmentId.set('');
+      this.selectedMunicipalityId.set('');
+      this.departmentControl.setValue('', { emitEvent: false });
+      this.municipalityControl.setValue('', { emitEvent: false });
     }
 
     this.editForm.patchValue({
