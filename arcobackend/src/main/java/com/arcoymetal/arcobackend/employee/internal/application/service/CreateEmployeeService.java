@@ -49,9 +49,9 @@ public class CreateEmployeeService implements CreateEmployeeUseCase {
                 new BirthDate(command.birthDate()),
                 new Address(new AddressLine(command.addressLine()), new DistrictId(command.districtId())),
                 new DUI(command.dui()),
-                command.nit() != null ? new NIT(command.nit()) : null,
-                command.isss() != null ? new ISSS(command.isss()) : null,
-                command.nup() != null ? new NUP(command.nup()) : null,
+                hasText(command.nit()) ? new NIT(command.nit()) : null,
+                hasText(command.isss()) ? new ISSS(command.isss()) : null,
+                hasText(command.nup()) ? new NUP(command.nup()) : null,
                 command.pensionFundInstitution(),
                 clock);
 
@@ -63,8 +63,24 @@ public class CreateEmployeeService implements CreateEmployeeUseCase {
             throw new DuplicateEmployeeException("An employee with the provided DUI already exists.");
         }
 
+        if (employee.getNit() != null && employeeRepository.existsByNit(employee.getNit().value())) {
+            throw new DuplicateEmployeeException("An employee with the provided NIT already exists.");
+        }
+
+        if (employee.getIsss() != null && employeeRepository.existsByIsss(employee.getIsss().value())) {
+            throw new DuplicateEmployeeException("An employee with the provided ISSS already exists.");
+        }
+
+        if (employee.getNup() != null && employeeRepository.existsByNup(employee.getNup().value())) {
+            throw new DuplicateEmployeeException("An employee with the provided NUP already exists.");
+        }
+
         employeeRepository.save(employee);
         return employeeId;
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
 }

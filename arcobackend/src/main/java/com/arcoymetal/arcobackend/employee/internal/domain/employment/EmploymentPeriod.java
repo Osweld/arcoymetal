@@ -1,11 +1,14 @@
 package com.arcoymetal.arcobackend.employee.internal.domain.employment;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.EmployeeId;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.DuplicateEmploymentChangeDateException;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.EmploymentPeriodNotActiveException;
 
 public class EmploymentPeriod {
     private final EmploymentId employmentId;
@@ -103,6 +106,66 @@ public class EmploymentPeriod {
                 status,
                 terminationReason,
                 employmentChanges
+        );
+    }
+
+    public EmploymentPeriod registerChange(EmploymentChange newChange) {
+        Objects.requireNonNull(newChange, "EmploymentChange cannot be null");
+
+        if (this.status != EmploymentStatus.ACTIVE) {
+            throw new EmploymentPeriodNotActiveException(this.employmentId.value());
+        }
+
+        if (!newChange.getEmploymentId().equals(this.employmentId)) {
+            throw new IllegalArgumentException(
+                    "EmploymentChange must belong to the same EmploymentPeriod");
+        }
+
+        if (newChange.getEffectiveFrom().value().isBefore(this.startDate.value())) {
+            throw new IllegalArgumentException(
+                    "EffectiveFrom date cannot be before employment period startDate");
+        }
+
+        boolean dateExists = this.employmentChanges.stream()
+                .anyMatch(existing -> existing.getEffectiveFrom().equals(newChange.getEffectiveFrom()));
+        if (dateExists) {
+            throw new DuplicateEmploymentChangeDateException(newChange.getEffectiveFrom().value());
+        }
+
+        List<EmploymentChange> updatedChanges = new ArrayList<>(this.employmentChanges);
+        updatedChanges.add(newChange);
+
+        return new EmploymentPeriod(
+                this.employmentId,
+                this.employeeId,
+                this.startDate,
+                this.endDate,
+                this.status,
+                this.terminationReason,
+                updatedChanges
+        );
+    }
+
+    public EmploymentPeriod terminate(EndDate endDate, TerminationReason terminationReason) {
+        if (this.status != EmploymentStatus.ACTIVE) {
+            throw new EmploymentPeriodNotActiveException(this.employmentId.value());
+        }
+
+        Objects.requireNonNull(endDate, "EndDate cannot be null");
+        Objects.requireNonNull(terminationReason, "TerminationReason cannot be null");
+
+        if (endDate.isBefore(this.startDate)) {
+            throw new IllegalArgumentException("End date cannot be before start date");
+        }
+
+        return new EmploymentPeriod(
+                this.employmentId,
+                this.employeeId,
+                this.startDate,
+                endDate,
+                EmploymentStatus.TERMINATED,
+                terminationReason,
+                this.employmentChanges
         );
     }
 

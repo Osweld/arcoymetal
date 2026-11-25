@@ -1,9 +1,13 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { EmployeeService } from '../../services/employee.service';
-import { EmployeeDetails, PENSION_FUND_LABELS } from '../../models/employee.model';
+import {
+  EmployeeDetails,
+  EmployeeEmploymentStatusFilter,
+  PENSION_FUND_LABELS,
+} from '../../models/employee.model';
 import { PageResult } from '../../../../shared/models/pagination.model';
 import { extractApiErrorMessage } from '../../../../shared/models/api-error.model';
 
@@ -17,7 +21,7 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
         <div>
           <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Directorio de Empleados</h2>
           <p class="text-sm text-slate-500">
-            Consulta paginada de expedientes (<code class="font-mono text-xs">GET /api/v1/employees?page={{ currentPage() }}&amp;size={{ pageSize() }}</code>)
+            Consulta paginada con búsqueda y filtros en servidor (<code class="font-mono text-xs">GET /api/v1/employees</code>)
           </p>
         </div>
 
@@ -45,17 +49,17 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
         </div>
       </div>
 
-      <!-- Filter Bar -->
+      <!-- Filter Bar (Server-side search & status filter) -->
       <form
-        (submit)="$event.preventDefault()"
+        (ngSubmit)="applyFilters()"
         method="GET"
         action="/employees"
         class="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs"
       >
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div class="sm:col-span-2">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
+          <div class="sm:col-span-5">
             <label for="employee-search" class="block text-xs font-semibold text-slate-700 mb-1">
-              Filtrar página actual por nombre, correo o DUI
+              Buscar por nombre, correo o DUI
             </label>
             <input
               id="employee-search"
@@ -67,14 +71,32 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
               autocapitalize="off"
               spellcheck="false"
               enterkeyhint="search"
-              placeholder="Ej. Carlos Mendoza, 012345678..."
+              placeholder="Ej. Carlos Mendoza, 01234567-8..."
               class="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
             />
           </div>
 
-          <div>
+          <div class="sm:col-span-3">
+            <label for="employee-status-filter" class="block text-xs font-semibold text-slate-700 mb-1">
+              Estado laboral
+            </label>
+            <select
+              id="employee-status-filter"
+              name="employmentStatus"
+              [ngModel]="statusFilter()"
+              (ngModelChange)="onStatusFilterChange($event)"
+              class="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base sm:text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+            >
+              <option value="">Todos los estados</option>
+              <option value="ACTIVE">Activos</option>
+              <option value="TERMINATED">Finalizados / Baja</option>
+              <option value="WITHOUT_PERIOD">Sin periodo laboral</option>
+            </select>
+          </div>
+
+          <div class="sm:col-span-2">
             <label for="employee-page-size" class="block text-xs font-semibold text-slate-700 mb-1">
-              Registros por página
+              Por página
             </label>
             <select
               id="employee-page-size"
@@ -83,10 +105,28 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
               (ngModelChange)="onPageSizeChange(+$event)"
               class="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base sm:text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
             >
-              <option [value]="10">10 por página</option>
-              <option [value]="20">20 por página</option>
-              <option [value]="50">50 por página</option>
+              <option [value]="10">10</option>
+              <option [value]="20">20</option>
+              <option [value]="50">50</option>
             </select>
+          </div>
+
+          <div class="sm:col-span-2 flex items-end gap-2">
+            <button
+              type="submit"
+              class="flex-1 rounded-lg bg-slate-900 px-3.5 py-2.5 text-xs font-bold text-white hover:bg-slate-800 cursor-pointer"
+            >
+              Buscar
+            </button>
+            @if (searchTerm() || statusFilter()) {
+              <button
+                type="button"
+                (click)="clearFilters()"
+                class="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+              >
+                Limpiar
+              </button>
+            }
           </div>
         </div>
       </form>
@@ -113,14 +153,14 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
           <div class="p-12 text-center text-sm text-slate-500">
             Consultando empleados desde <code class="font-mono text-xs">GET /api/v1/employees</code>...
           </div>
-        } @else if (filteredEmployees().length === 0) {
+        } @else if (pageResult().content.length === 0) {
           <div class="p-12 text-center">
             <p class="text-base font-semibold text-slate-800">No se encontraron empleados</p>
             <p class="mt-1 text-xs text-slate-500">
-              @if (pageResult().content.length === 0) {
-                Aún no existen registros en la tabla <code class="font-mono">employee</code>.
+              @if (searchTerm() || statusFilter()) {
+                Prueba ajustando o limpiando los filtros de búsqueda y estado laboral.
               } @else {
-                Prueba ajustando el texto de búsqueda en la página actual.
+                Aún no existen registros en la tabla <code class="font-mono">employee</code>.
               }
             </p>
             <a
@@ -158,7 +198,7 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-200 text-sm">
-                @for (emp of filteredEmployees(); track emp.employeeId) {
+                @for (emp of pageResult().content; track emp.employeeId) {
                   <tr class="hover:bg-slate-50/80 transition-colors">
                     <th scope="row" class="px-5 py-4 text-left font-normal">
                       <div class="font-bold text-slate-900">
@@ -251,6 +291,7 @@ export class EmployeeListComponent implements OnInit {
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly searchTerm = signal('');
+  readonly statusFilter = signal<EmployeeEmploymentStatusFilter | ''>('');
 
   readonly pageResult = signal<PageResult<EmployeeDetails>>({
     content: [],
@@ -264,22 +305,16 @@ export class EmployeeListComponent implements OnInit {
 
   readonly pensionLabels = PENSION_FUND_LABELS;
 
-  readonly filteredEmployees = computed(() => {
-    const query = this.searchTerm().trim().toLowerCase();
-    const list = this.pageResult().content;
-    if (!query) return list;
-
-    return list.filter((emp) => {
-      const fullName = `${emp.firstName} ${emp.lastName}`.toLowerCase();
-      return (
-        fullName.includes(query) ||
-        emp.email.toLowerCase().includes(query) ||
-        emp.dui.toLowerCase().includes(query)
-      );
-    });
-  });
-
   ngOnInit(): void {
+    this.loadPage(0);
+  }
+
+  applyFilters(): void {
+    this.loadPage(0);
+  }
+
+  onStatusFilterChange(status: EmployeeEmploymentStatusFilter | ''): void {
+    this.statusFilter.set(status);
     this.loadPage(0);
   }
 
@@ -288,26 +323,37 @@ export class EmployeeListComponent implements OnInit {
     this.loadPage(0);
   }
 
+  clearFilters(): void {
+    this.searchTerm.set('');
+    this.statusFilter.set('');
+    this.loadPage(0);
+  }
+
   loadPage(page: number): void {
     if (page < 0) return;
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.employeeService.getEmployeesPage(page, this.pageSize()).subscribe({
-      next: (result) => {
-        this.currentPage.set(result.page);
-        this.pageResult.set(result);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.errorMessage.set(
-          extractApiErrorMessage(
-            err,
-            'No se pudo conectar con GET /api/v1/employees. Verifica que el backend Spring Boot esté en ejecución.'
-          )
-        );
-        this.loading.set(false);
-      },
-    });
+    this.employeeService
+      .getEmployeesPage(page, this.pageSize(), {
+        search: this.searchTerm(),
+        employmentStatus: this.statusFilter(),
+      })
+      .subscribe({
+        next: (result) => {
+          this.currentPage.set(result.page);
+          this.pageResult.set(result);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.errorMessage.set(
+            extractApiErrorMessage(
+              err,
+              'No se pudo conectar con GET /api/v1/employees. Verifica que el backend Spring Boot esté en ejecución.'
+            )
+          );
+          this.loading.set(false);
+        },
+      });
   }
 }

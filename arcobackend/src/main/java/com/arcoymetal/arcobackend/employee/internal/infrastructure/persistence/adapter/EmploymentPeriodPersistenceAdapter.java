@@ -1,7 +1,10 @@
 package com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.adapter;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Repository;
 
@@ -33,9 +36,29 @@ public class EmploymentPeriodPersistenceAdapter implements EmploymentPeriodRepos
         EmploymentPeriodEntity employmentPeriodEntity = employmentPeriodPersistenceMapper.toEntity(employmentPeriod);
         springDataEmploymentPeriodRepository.save(employmentPeriodEntity);
 
-        List<EmploymentChangeEntity> employmentChangeEntities =
-                employmentChangePersistenceMapper.toEmploymentChangeEntities(employmentPeriod.getEmploymentChanges());
-        springDataEmploymentChangeRepository.saveAll(employmentChangeEntities);
+        Set<UUID> existingChangeIds = springDataEmploymentChangeRepository
+                .findByEmploymentId(employmentPeriod.getEmploymentId().value())
+                .orElse(List.of())
+                .stream()
+                .map(EmploymentChangeEntity::getEmploymentChangeId)
+                .collect(Collectors.toSet());
+
+        List<EmploymentChange> newChanges = employmentPeriod.getEmploymentChanges().stream()
+                .filter(change -> !existingChangeIds.contains(change.getEmploymentChangeId().value()))
+                .toList();
+
+        if (!newChanges.isEmpty()) {
+            springDataEmploymentChangeRepository.saveAll(
+                    employmentChangePersistenceMapper.toEmploymentChangeEntities(newChanges)
+            );
+        }
+    }
+
+    @Override
+    public void saveChange(EmploymentChange employmentChange) {
+        springDataEmploymentChangeRepository.save(
+                employmentChangePersistenceMapper.toEntity(employmentChange)
+        );
     }
 
     @Override
@@ -43,8 +66,7 @@ public class EmploymentPeriodPersistenceAdapter implements EmploymentPeriodRepos
         EmploymentPeriodEntity periodEntity = springDataEmploymentPeriodRepository.findById(employmentId)
                 .orElseThrow(() -> new EmploymentPeriodNotFoundException(employmentId));
         List<EmploymentChangeEntity> changeEntities = springDataEmploymentChangeRepository
-                .findByEmploymentId(employmentId)
-                .orElse(List.of());
+                .findByEmploymentIdOrderByEffectiveFromDesc(employmentId);
         List<EmploymentChange> changes = employmentChangePersistenceMapper.toDomainList(changeEntities);
         return employmentPeriodPersistenceMapper.toDomain(periodEntity, changes);
     }
@@ -52,5 +74,14 @@ public class EmploymentPeriodPersistenceAdapter implements EmploymentPeriodRepos
     @Override
     public boolean existsActiveByEmployeeId(UUID employeeId) {
         return springDataEmploymentPeriodRepository.existsByEmployeeIdAndStatus(employeeId, EmploymentStatus.ACTIVE);
+    }
+
+    @Override
+    public boolean existsTerminatedEndingOnOrAfter(UUID employeeId, LocalDate startDate) {
+        return springDataEmploymentPeriodRepository.existsByEmployeeIdAndStatusAndEndDateGreaterThanEqual(
+                employeeId,
+                EmploymentStatus.TERMINATED,
+                startDate
+        );
     }
 }

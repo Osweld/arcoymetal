@@ -40,6 +40,21 @@ public class EmployeePersistenceAdapter  implements EmployeeRepository {
         return springDataEmployeeRepository.existsByDui(dui);
     }
 
+    @Override
+    public boolean existsByNit(String nit) {
+        return springDataEmployeeRepository.existsByNit(nit);
+    }
+
+    @Override
+    public boolean existsByIsss(String isss) {
+        return springDataEmployeeRepository.existsByIsss(isss);
+    }
+
+    @Override
+    public boolean existsByNup(String nup) {
+        return springDataEmployeeRepository.existsByNup(nup);
+    }
+
 
     @Override
     public Employee findById(UUID employeeId) {

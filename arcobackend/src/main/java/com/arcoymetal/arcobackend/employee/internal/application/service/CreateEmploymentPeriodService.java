@@ -21,6 +21,7 @@ import com.arcoymetal.arcobackend.employee.internal.domain.employment.JobTitle;
 import com.arcoymetal.arcobackend.employee.internal.domain.employment.StartDate;
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.ActiveEmploymentPeriodAlreadyExistsException;
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.EmployeeNotFoundException;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.OverlappingEmploymentPeriodException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -43,6 +44,11 @@ public class CreateEmploymentPeriodService implements CreateEmploymentPeriodUseC
 
         if (employmentPeriodRepository.existsActiveByEmployeeId(command.employeeId())) {
             throw new ActiveEmploymentPeriodAlreadyExistsException(command.employeeId());
+        }
+
+        StartDate startDate = new StartDate(command.startDate());
+        if (employmentPeriodRepository.existsTerminatedEndingOnOrAfter(command.employeeId(), startDate.value())) {
+            throw new OverlappingEmploymentPeriodException(command.employeeId(), startDate.value());
         }
 
         EmploymentId employmentId = EmploymentId.generate();

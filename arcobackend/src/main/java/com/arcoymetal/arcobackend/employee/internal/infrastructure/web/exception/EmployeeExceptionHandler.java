@@ -11,8 +11,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.ActiveEmploymentPeriodAlreadyExistsException;
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.DuplicateEmployeeException;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.DuplicateEmploymentChangeDateException;
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.EmployeeNotFoundException;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.EmploymentPeriodNotActiveException;
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.EmploymentPeriodNotFoundException;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.OverlappingEmploymentPeriodException;
 import com.arcoymetal.arcobackend.shared.infrastructure.web.exception.ApiErrorResponse;
 
 @RestControllerAdvice
@@ -30,7 +33,13 @@ public class EmployeeExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
-    @ExceptionHandler({ DuplicateEmployeeException.class, ActiveEmploymentPeriodAlreadyExistsException.class })
+    @ExceptionHandler({
+            DuplicateEmployeeException.class,
+            ActiveEmploymentPeriodAlreadyExistsException.class,
+            EmploymentPeriodNotActiveException.class,
+            DuplicateEmploymentChangeDateException.class,
+            OverlappingEmploymentPeriodException.class
+    })
     public ResponseEntity<ApiErrorResponse> handleConflict(RuntimeException exception) {
         ApiErrorResponse response = new ApiErrorResponse(
                 Instant.now(),

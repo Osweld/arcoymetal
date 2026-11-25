@@ -6,7 +6,7 @@ import { EmployeeDetailComponent } from './employee-detail.component';
 import { EmployeeService } from '../../services/employee.service';
 import { EmploymentPeriodService } from '../../services/employment-period.service';
 import { LocationService } from '../../services/location.service';
-import { EmployeeDetails } from '../../models/employee.model';
+import { EmployeeDetails, EmploymentPeriodDetails } from '../../models/employee.model';
 
 describe('EmployeeDetailComponent', () => {
   const sampleEmployee: EmployeeDetails = {
@@ -27,6 +27,35 @@ describe('EmployeeDetailComponent', () => {
     createdAt: '2026-11-24T12:00:00Z',
   };
 
+  const activeHistory: EmploymentPeriodDetails[] = [
+    {
+      employmentPeriodId: 'ep-1',
+      employeeId: 'emp-1',
+      startDate: '2026-01-15',
+      endDate: null,
+      status: 'ACTIVE',
+      terminationReason: null,
+      changes: [
+        {
+          employmentChangeId: 'chg-1',
+          jobTitle: 'Soldador de Estructuras',
+          contractType: 'FULL_TIME',
+          baseSalary: 650.5,
+          effectiveFrom: '2026-01-15',
+          createdAt: '2026-01-15T12:00:00Z',
+        },
+        {
+          employmentChangeId: 'chg-latest',
+          jobTitle: 'Soldador Senior',
+          contractType: 'FULL_TIME',
+          baseSalary: 780.0,
+          effectiveFrom: '2026-05-01',
+          createdAt: '2026-05-01T12:00:00Z',
+        },
+      ],
+    },
+  ];
+
   const mockHierarchy = [
     {
       id: 'AH',
@@ -41,21 +70,10 @@ describe('EmployeeDetailComponent', () => {
     },
   ];
 
-  it('creates an EmploymentPeriod and handles 409 conflict when an active period already exists', () => {
-    const createEmploymentPeriod = vi
-      .fn()
-      .mockReturnValueOnce(of({ employmentPeriodId: 'ep-uuid-1' }))
-      .mockReturnValueOnce(
-        throwError(() => ({
-          status: 409,
-          error: {
-            timestamp: '2026-11-24T12:00:00Z',
-            status: 409,
-            message: 'Employee with ID emp-1 already has an active employment period',
-            errors: null,
-          },
-        }))
-      );
+  it('pre-selects location selects, displays active employment, registers change and terminates period', () => {
+    const getEmployeeHistory = vi.fn().mockReturnValue(of(activeHistory));
+    const registerChange = vi.fn().mockReturnValue(of({ employmentChangeId: 'chg-2' }));
+    const terminatePeriod = vi.fn().mockReturnValue(of({ employmentPeriodId: 'ep-1' }));
 
     TestBed.configureTestingModule({
       imports: [EmployeeDetailComponent],
@@ -72,7 +90,15 @@ describe('EmployeeDetailComponent', () => {
             updateEmployee: () => of({ employeeId: 'emp-1' }),
           },
         },
-        { provide: EmploymentPeriodService, useValue: { createEmploymentPeriod } },
+        {
+          provide: EmploymentPeriodService,
+          useValue: {
+            getEmployeeHistory,
+            createEmploymentPeriod: vi.fn(),
+            registerChange,
+            terminatePeriod,
+          },
+        },
         {
           provide: LocationService,
           useValue: {
@@ -92,47 +118,111 @@ describe('EmployeeDetailComponent', () => {
 
     const component = fixture.componentInstance;
 
-    // Verify edit form pre-selects department, municipality, and district in the DOM
+    // 1. Active employment explicitly picks the change with greatest effectiveFrom (even if not at index 0)
+    expect(component.activePeriod()?.employmentPeriodId).toBe('ep-1');
+    expect(component.currentEmployment()?.jobTitle).toBe('Soldador Senior');
+    expect(component.currentEmployment()?.baseSalary).toBe(780);
+
+    // 2. Edit form pre-selects department, municipality, and district in the DOM
     component.toggleEditMode();
     fixture.detectChanges();
-    const deptSelect = fixture.nativeElement.querySelector('#edit-dept') as HTMLSelectElement;
-    const munSelect = fixture.nativeElement.querySelector('#edit-mun') as HTMLSelectElement;
-    const distSelect = fixture.nativeElement.querySelector('#edit-dist') as HTMLSelectElement;
-    expect(deptSelect.value).toBe('AH');
-    expect(munSelect.value).toBe('AH01');
-    expect(distSelect.value).toBe('AH0101');
+    expect((fixture.nativeElement.querySelector('#edit-dept') as HTMLSelectElement).value).toBe('AH');
+    expect((fixture.nativeElement.querySelector('#edit-mun') as HTMLSelectElement).value).toBe('AH01');
+    expect((fixture.nativeElement.querySelector('#edit-dist') as HTMLSelectElement).value).toBe('AH0101');
 
-    component.toggleEmploymentPeriodForm();
-    component.employmentPeriodForm.setValue({
-      startDate: '2026-01-15',
-      jobTitle: 'Soldador de Estructuras',
+    // 3. Register employment change
+    component.togglePanel('change');
+    component.registerChangeForm.setValue({
+      effectiveFrom: '2026-06-01',
+      jobTitle: 'Maestro Soldador',
       contractType: 'FULL_TIME',
-      baseSalary: '650.50',
+      baseSalary: '800.00',
+    });
+    component.onRegisterChange();
+
+    expect(registerChange).toHaveBeenCalledWith('ep-1', {
+      effectiveFrom: '2026-06-01',
+      jobTitle: 'Maestro Soldador',
+      contractType: 'FULL_TIME',
+      baseSalary: 800,
     });
 
-    component.onCreateEmploymentPeriod();
-
-    expect(createEmploymentPeriod).toHaveBeenCalledWith({
-      employeeId: 'emp-1',
-      startDate: '2026-01-15',
-      jobTitle: 'Soldador de Estructuras',
-      contractType: 'FULL_TIME',
-      baseSalary: 650.5,
+    // 4. Terminate active period
+    component.togglePanel('terminate');
+    component.terminateForm.setValue({
+      endDate: '2026-12-31',
+      terminationReason: 'MUTUAL_AGREEMENT',
     });
-    expect(component.lastCreatedPeriod()?.employmentPeriodId).toBe('ep-uuid-1');
+    component.onTerminatePeriod();
 
-    // Second attempt triggers 409 conflict
-    component.toggleEmploymentPeriodForm();
+    expect(terminatePeriod).toHaveBeenCalledWith('ep-1', {
+      endDate: '2026-12-31',
+      terminationReason: 'MUTUAL_AGREEMENT',
+    });
+  });
+
+  it('handles 409 conflict when creating an overlapping period', () => {
+    const createEmploymentPeriod = vi.fn().mockReturnValue(
+      throwError(() => ({
+        status: 409,
+        error: {
+          timestamp: '2026-11-24T12:00:00Z',
+          status: 409,
+          message: 'Start date 2026-01-15 overlaps with a previous employment period',
+          errors: null,
+        },
+      }))
+    );
+
+    TestBed.configureTestingModule({
+      imports: [EmployeeDetailComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: { get: () => 'emp-1' } } },
+        },
+        {
+          provide: EmployeeService,
+          useValue: {
+            getEmployeeById: () => of(sampleEmployee),
+            updateEmployee: () => of({ employeeId: 'emp-1' }),
+          },
+        },
+        {
+          provide: EmploymentPeriodService,
+          useValue: {
+            getEmployeeHistory: () => of([]),
+            createEmploymentPeriod,
+            registerChange: vi.fn(),
+            terminatePeriod: vi.fn(),
+          },
+        },
+        {
+          provide: LocationService,
+          useValue: {
+            getHierarchy: () => of(mockHierarchy),
+            resolveDistrict: () => null,
+          },
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(EmployeeDetailComponent);
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    component.togglePanel('period');
     component.employmentPeriodForm.setValue({
-      startDate: '2026-02-01',
-      jobTitle: 'Soldador II',
+      startDate: '2026-01-15',
+      jobTitle: 'Soldador',
       contractType: 'FULL_TIME',
-      baseSalary: '700.00',
+      baseSalary: '600.00',
     });
     component.onCreateEmploymentPeriod();
 
     expect(component.actionError()).toBe(
-      'Employee with ID emp-1 already has an active employment period'
+      'Start date 2026-01-15 overlaps with a previous employment period'
     );
   });
 });

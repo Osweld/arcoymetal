@@ -11,6 +11,56 @@ export type PensionFundInstitution = 'AFP_CONFIA' | 'AFP_CRECER' | 'ISP';
 
 export type EmploymentStatus = 'ACTIVE' | 'TERMINATED';
 
+export type EmployeeEmploymentStatusFilter = 'ACTIVE' | 'TERMINATED' | 'WITHOUT_PERIOD';
+
+export type TerminationReason =
+  | 'RESIGNATION'
+  | 'DISMISSAL'
+  | 'MUTUAL_AGREEMENT'
+  | 'CONTRACT_EXPIRATION'
+  | 'RETIREMENT'
+  | 'DEATH'
+  | 'OTHER';
+
+export interface EmploymentChangeDetails {
+  employmentChangeId: string;
+  jobTitle: string;
+  contractType: ContractType;
+  baseSalary: number;
+  effectiveFrom: string;
+  createdAt: string;
+}
+
+export interface EmploymentPeriodDetails {
+  employmentPeriodId: string;
+  employeeId: string;
+  startDate: string;
+  endDate: string | null;
+  status: EmploymentStatus;
+  terminationReason: TerminationReason | null;
+  changes: EmploymentChangeDetails[];
+}
+
+export interface RegisterEmploymentChangeRequest {
+  jobTitle: string;
+  contractType: ContractType;
+  baseSalary: number;
+  effectiveFrom: string;
+}
+
+export interface RegisterEmploymentChangeResponse {
+  employmentChangeId: string;
+}
+
+export interface TerminateEmploymentPeriodRequest {
+  endDate: string;
+  terminationReason: TerminationReason;
+}
+
+export interface TerminateEmploymentPeriodResponse {
+  employmentPeriodId: string;
+}
+
 export interface EmployeeDetails {
   employeeId: string;
   firstName: string;
@@ -89,4 +139,14 @@ export const PENSION_FUND_LABELS: Record<PensionFundInstitution, string> = {
 export const EMPLOYMENT_STATUS_LABELS: Record<EmploymentStatus, string> = {
   ACTIVE: 'Activo',
   TERMINATED: 'Finalizado / Baja',
+};
+
+export const TERMINATION_REASON_LABELS: Record<TerminationReason, string> = {
+  RESIGNATION: 'Renuncia voluntaria',
+  DISMISSAL: 'Despido',
+  MUTUAL_AGREEMENT: 'Mutuo acuerdo',
+  CONTRACT_EXPIRATION: 'Vencimiento de contrato',
+  RETIREMENT: 'Jubilación',
+  DEATH: 'Fallecimiento',
+  OTHER: 'Otro motivo',
 };

@@ -61,6 +61,26 @@ describe('EmployeeService', () => {
     expect(received).toEqual(mockPage);
   });
 
+  it('sends search and employmentStatus query params to GET /api/v1/employees', () => {
+    service
+      .getEmployeesPage(0, 10, { search: ' 01234567-8 ', employmentStatus: 'ACTIVE' })
+      .subscribe();
+
+    const req = httpMock.expectOne(
+      '/api/v1/employees?page=0&size=10&search=01234567-8&employmentStatus=ACTIVE'
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({
+      content: [],
+      page: 0,
+      size: 10,
+      totalElements: 0,
+      totalPages: 0,
+      first: true,
+      last: true,
+    });
+  });
+
   it('fetches employee details from GET /api/v1/employees/:id', () => {
     let received: EmployeeDetails | undefined;
     service.getEmployeeById('emp-1').subscribe((res) => (received = res));

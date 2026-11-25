@@ -10,11 +10,18 @@ import {
   CONTRACT_TYPE_LABELS,
   ContractType,
   CreateEmploymentPeriodRequest,
+  EMPLOYMENT_STATUS_LABELS,
   EmployeeDetails,
+  EmploymentChangeDetails,
+  EmploymentPeriodDetails,
   GENDER_LABELS,
   Gender,
   PENSION_FUND_LABELS,
   PensionFundInstitution,
+  RegisterEmploymentChangeRequest,
+  TERMINATION_REASON_LABELS,
+  TerminateEmploymentPeriodRequest,
+  TerminationReason,
   UpdateEmployeeRequest,
 } from '../../models/employee.model';
 import {
@@ -44,29 +51,47 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
         </div>
 
         @if (employee(); as emp) {
-          <div class="flex flex-wrap items-center gap-2.5">
+          <div class="flex flex-wrap items-center gap-2">
             <button
               type="button"
               (click)="toggleEditMode()"
-              class="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 cursor-pointer"
+              class="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 cursor-pointer"
             >
-              {{ editingEmployee() ? 'Cancelar edición' : 'Editar Expediente' }}
+              {{ activePanel() === 'edit' ? 'Cancelar edición' : 'Editar Expediente' }}
             </button>
 
-            <button
-              type="button"
-              (click)="toggleEmploymentPeriodForm()"
-              class="inline-flex items-center gap-1.5 rounded-xl border border-slate-900 bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 cursor-pointer"
-            >
-              {{ creatingPeriod() ? 'Ocultar Periodo Laboral' : '+ Registrar Periodo Laboral' }}
-            </button>
+            @if (activePeriod()) {
+              <button
+                type="button"
+                (click)="togglePanel('change')"
+                class="inline-flex items-center gap-1.5 rounded-xl border border-slate-900 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 cursor-pointer"
+              >
+                {{ activePanel() === 'change' ? 'Ocultar Cambio' : '+ Registrar Cambio Laboral' }}
+              </button>
+
+              <button
+                type="button"
+                (click)="togglePanel('terminate')"
+                class="inline-flex items-center gap-1.5 rounded-xl border border-rose-300 bg-rose-50 px-3.5 py-2 text-xs font-semibold text-rose-800 hover:bg-rose-100 cursor-pointer"
+              >
+                {{ activePanel() === 'terminate' ? 'Cancelar Baja' : 'Dar de Baja' }}
+              </button>
+            } @else {
+              <button
+                type="button"
+                (click)="togglePanel('period')"
+                class="inline-flex items-center gap-1.5 rounded-xl border border-slate-900 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 cursor-pointer"
+              >
+                {{ activePanel() === 'period' ? 'Ocultar Periodo' : '+ Registrar Periodo Laboral' }}
+              </button>
+            }
 
             <a
               [routerLink]="['/users/new']"
               [queryParams]="{ employeeId: emp.employeeId }"
-              class="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400"
+              class="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400"
             >
-              + Asignar Cuenta de Usuario
+              + Usuario
             </a>
           </div>
         }
@@ -100,55 +125,61 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
           </div>
         }
 
-        <!-- Summary Banner -->
+        <!-- Summary & Current Employment Banner -->
         <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-2xs">
           <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 class="text-xl font-extrabold text-slate-900">
-                {{ emp.firstName }} {{ emp.lastName }}
-              </h3>
-              <p class="mt-1 text-sm text-slate-600">
-                {{ emp.email }} &bull; Tel: {{ emp.phoneNumber }}
-              </p>
+              <div class="flex flex-wrap items-center gap-2.5">
+                <h3 class="text-xl font-extrabold text-slate-900">
+                  {{ emp.firstName }} {{ emp.lastName }}
+                </h3>
+                @if (activePeriod()) {
+                  <span class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
+                    {{ statusLabels.ACTIVE }}
+                  </span>
+                } @else {
+                  <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                    Sin periodo activo
+                  </span>
+                }
+              </div>
+
+              @if (currentEmployment(); as current) {
+                <p class="mt-1 text-sm font-medium text-slate-700">
+                  {{ current.jobTitle }} &bull; {{ contractLabels[current.contractType] }}
+                </p>
+              } @else {
+                <p class="mt-1 text-sm text-slate-500">
+                  {{ emp.email }} &bull; Tel: {{ emp.phoneNumber }}
+                </p>
+              }
               <p class="mt-1 font-mono text-xs text-slate-400">ID: {{ emp.employeeId }}</p>
             </div>
 
             <div class="text-left sm:text-right">
-              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Institución Previsional</p>
-              <p class="text-sm font-bold text-slate-900 mt-0.5">
-                {{ pensionLabels[emp.pensionFundInstitution] }}
-              </p>
-              <p class="text-xs text-slate-500 mt-1">
-                Registrado: {{ emp.createdAt | date: 'mediumDate' }}
-              </p>
+              @if (currentEmployment(); as current) {
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Salario Base Vigente</p>
+                <p class="text-2xl font-extrabold text-slate-900">
+                  {{ current.baseSalary | currency: 'USD' : 'symbol' : '1.2-2' }}
+                </p>
+                <p class="text-xs text-slate-500">
+                  Vigente desde {{ current.effectiveFrom | date: 'mediumDate' }}
+                </p>
+              } @else {
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Institución Previsional</p>
+                <p class="text-sm font-bold text-slate-900 mt-0.5">
+                  {{ pensionLabels[emp.pensionFundInstitution] }}
+                </p>
+                <p class="text-xs text-slate-500 mt-1">
+                  Registrado: {{ emp.createdAt | date: 'mediumDate' }}
+                </p>
+              }
             </div>
           </div>
         </section>
 
-        <!-- Last Created Employment Period Confirmation -->
-        @if (lastCreatedPeriod(); as period) {
-          <section
-            role="status"
-            class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-5 space-y-2"
-          >
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <h4 class="text-sm font-bold text-emerald-900">
-                Periodo laboral activo registrado correctamente
-              </h4>
-              <span class="font-mono text-xs text-emerald-800">
-                ID: {{ period.employmentPeriodId }}
-              </span>
-            </div>
-            <p class="text-xs text-emerald-900">
-              <strong>{{ period.jobTitle }}</strong> &bull; {{ contractLabels[period.contractType] }} &bull;
-              Salario base: <strong>{{ period.baseSalary | currency: 'USD' : 'symbol' : '1.2-2' }}</strong> &bull;
-              Inicio: {{ period.startDate | date: 'mediumDate' }}
-            </p>
-          </section>
-        }
-
-        <!-- Create Employment Period Form (POST /api/v1/employment-periods) -->
-        @if (creatingPeriod()) {
+        <!-- Form: Create Employment Period (POST /api/v1/employment-periods) -->
+        @if (activePanel() === 'period') {
           <form
             [formGroup]="employmentPeriodForm"
             (ngSubmit)="onCreateEmploymentPeriod()"
@@ -179,7 +210,7 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                   />
                   @if (showPeriodError('startDate')) {
                     <p id="err-ep-startDate" role="alert" class="mt-1 text-xs font-medium text-rose-600">
-                      La fecha de inicio es obligatoria (desde 1950-01-01).
+                      La fecha de inicio es obligatoria.
                     </p>
                   }
                 </div>
@@ -225,7 +256,7 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                     class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 font-mono text-sm text-slate-900 focus:border-amber-500 focus:outline-none"
                   />
                   <span id="help-ep-baseSalary" class="mt-1 block text-[11px] text-slate-500">
-                    Monto no negativo con máximo 2 decimales (ej. 650.00).
+                    Monto >= 0.00 con máximo 2 decimales.
                   </span>
                   @if (showPeriodError('baseSalary')) {
                     <p id="err-ep-baseSalary" role="alert" class="mt-1 text-xs font-medium text-rose-600">
@@ -264,24 +295,202 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
             <div class="flex justify-end gap-3 pt-2">
               <button
                 type="button"
-                (click)="toggleEmploymentPeriodForm()"
+                (click)="togglePanel('period')"
                 class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                [disabled]="savingPeriod()"
+                [disabled]="savingAction()"
                 class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-60 cursor-pointer"
               >
-                {{ savingPeriod() ? 'Registrando periodo...' : 'Crear Periodo Laboral' }}
+                {{ savingAction() ? 'Registrando periodo...' : 'Crear Periodo Laboral' }}
               </button>
             </div>
           </form>
         }
 
-        <!-- Inline Edit Form for Full Employee Record (PUT /api/v1/employees/{id}) -->
-        @if (editingEmployee()) {
+        <!-- Form: Register Employment Change (POST /api/v1/employment-periods/{id}/changes) -->
+        @if (activePanel() === 'change' && activePeriod()) {
+          <form
+            [formGroup]="registerChangeForm"
+            (ngSubmit)="onRegisterChange()"
+            method="POST"
+            novalidate
+            class="rounded-xl border-2 border-slate-900 bg-white p-6 shadow-sm space-y-5"
+          >
+            <fieldset class="space-y-4">
+              <legend class="text-base font-bold text-slate-900">
+                Registrar Cambio Laboral (Salario / Puesto / Contrato)
+              </legend>
+
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label for="chg-effectiveFrom" class="block text-sm font-semibold text-slate-800 mb-1">
+                    Fecha de vigencia <span class="text-rose-600">*</span>
+                  </label>
+                  <input
+                    id="chg-effectiveFrom"
+                    name="effectiveFrom"
+                    type="date"
+                    formControlName="effectiveFrom"
+                    [min]="activePeriod()?.startDate ?? '1950-01-01'"
+                    required
+                    class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label for="chg-jobTitle" class="block text-sm font-semibold text-slate-800 mb-1">
+                    Nuevo Cargo / Puesto <span class="text-rose-600">*</span>
+                  </label>
+                  <input
+                    id="chg-jobTitle"
+                    name="jobTitle"
+                    type="text"
+                    formControlName="jobTitle"
+                    maxlength="100"
+                    required
+                    class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label for="chg-baseSalary" class="block text-sm font-semibold text-slate-800 mb-1">
+                    Nuevo Salario Base (USD $) <span class="text-rose-600">*</span>
+                  </label>
+                  <input
+                    id="chg-baseSalary"
+                    name="baseSalary"
+                    type="text"
+                    inputmode="decimal"
+                    formControlName="baseSalary"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    placeholder="750.00"
+                    required
+                    class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 font-mono text-sm text-slate-900 focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <span class="block text-sm font-semibold text-slate-800 mb-2">
+                  Modalidad de Contrato <span class="text-rose-600">*</span>
+                </span>
+                <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+                  @for (ct of contractTypeOptions; track ct.value) {
+                    <label
+                      class="flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-semibold cursor-pointer transition-colors"
+                      [class.border-amber-500]="registerChangeForm.controls.contractType.value === ct.value"
+                      [class.bg-amber-50/70]="registerChangeForm.controls.contractType.value === ct.value"
+                      [class.border-slate-300]="registerChangeForm.controls.contractType.value !== ct.value"
+                    >
+                      <input
+                        type="radio"
+                        name="changeContractType"
+                        [value]="ct.value"
+                        formControlName="contractType"
+                        class="h-4 w-4 accent-amber-600 shrink-0"
+                      />
+                      <span>{{ ct.label }}</span>
+                    </label>
+                  }
+                </div>
+              </div>
+            </fieldset>
+
+            <div class="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                (click)="togglePanel('change')"
+                class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                [disabled]="savingAction()"
+                class="rounded-lg bg-amber-500 px-5 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-60 cursor-pointer"
+              >
+                {{ savingAction() ? 'Guardando cambio...' : 'Guardar Cambio Histórico' }}
+              </button>
+            </div>
+          </form>
+        }
+
+        <!-- Form: Terminate Employment Period (POST /api/v1/employment-periods/{id}/terminate) -->
+        @if (activePanel() === 'terminate' && activePeriod()) {
+          <form
+            [formGroup]="terminateForm"
+            (ngSubmit)="onTerminatePeriod()"
+            method="POST"
+            novalidate
+            class="rounded-xl border-2 border-rose-400 bg-white p-6 shadow-sm space-y-5"
+          >
+            <fieldset class="space-y-4">
+              <legend class="text-base font-bold text-rose-900">
+                Finalizar Periodo Laboral Activo (Baja)
+              </legend>
+
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="term-endDate" class="block text-sm font-semibold text-slate-800 mb-1">
+                    Fecha de baja <span class="text-rose-600">*</span>
+                  </label>
+                  <input
+                    id="term-endDate"
+                    name="endDate"
+                    type="date"
+                    formControlName="endDate"
+                    [min]="activePeriod()?.startDate ?? '1950-01-01'"
+                    required
+                    class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-rose-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label for="term-reason" class="block text-sm font-semibold text-slate-800 mb-1">
+                    Motivo de terminación <span class="text-rose-600">*</span>
+                  </label>
+                  <select
+                    id="term-reason"
+                    name="terminationReason"
+                    formControlName="terminationReason"
+                    required
+                    class="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-rose-500 focus:outline-none"
+                  >
+                    @for (reason of terminationReasonOptions; track reason.value) {
+                      <option [value]="reason.value">{{ reason.label }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+            </fieldset>
+
+            <div class="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                (click)="togglePanel('terminate')"
+                class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                [disabled]="savingAction()"
+                class="rounded-lg bg-rose-600 px-5 py-2 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+              >
+                {{ savingAction() ? 'Finalizando periodo...' : 'Confirmar Baja Laboral' }}
+              </button>
+            </div>
+          </form>
+        }
+
+        <!-- Form: Edit Full Employee Record (PUT /api/v1/employees/{id}) -->
+        @if (activePanel() === 'edit') {
           <form
             [formGroup]="editForm"
             (ngSubmit)="onSaveEmployee()"
@@ -558,10 +767,10 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
               </button>
               <button
                 type="submit"
-                [disabled]="savingEmployee()"
+                [disabled]="savingAction()"
                 class="rounded-lg bg-slate-900 px-5 py-2 text-xs font-bold text-white hover:bg-slate-800 disabled:opacity-60 cursor-pointer"
               >
-                {{ savingEmployee() ? 'Actualizando...' : 'Guardar Cambios' }}
+                {{ savingAction() ? 'Actualizando...' : 'Guardar Cambios' }}
               </button>
             </div>
           </form>
@@ -639,6 +848,108 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
             </dl>
           </section>
         </div>
+
+        <!-- Employment History Section -->
+        <section class="rounded-xl border border-slate-200 bg-white shadow-2xs overflow-hidden">
+          <div class="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+            <div>
+              <h4 class="text-sm font-bold uppercase tracking-wider text-slate-700">
+                Historial Laboral y Cambios Salariales
+              </h4>
+              <p class="text-xs text-slate-500">
+                Registros históricos inmutables de periodos de contratación y vigencias salariales.
+              </p>
+            </div>
+            <span class="text-xs font-semibold text-slate-500">
+              {{ employmentHistory().length }} periodo(s)
+            </span>
+          </div>
+
+          @if (employmentHistory().length === 0) {
+            <div class="p-8 text-center">
+              <p class="text-sm font-semibold text-slate-800">Sin periodos laborales registrados</p>
+              <p class="mt-1 text-xs text-slate-500">
+                Registra un periodo laboral para asignar cargo, modalidad de contrato y salario base.
+              </p>
+            </div>
+          } @else {
+            <div class="divide-y divide-slate-200">
+              @for (period of employmentHistory(); track period.employmentPeriodId) {
+                <div class="p-6 space-y-4">
+                  <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span
+                        class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                        [class.bg-emerald-100]="period.status === 'ACTIVE'"
+                        [class.text-emerald-800]="period.status === 'ACTIVE'"
+                        [class.bg-rose-100]="period.status === 'TERMINATED'"
+                        [class.text-rose-800]="period.status === 'TERMINATED'"
+                      >
+                        {{ statusLabels[period.status] }}
+                      </span>
+                      <span class="text-sm font-bold text-slate-900">
+                        Inicio: {{ period.startDate | date: 'mediumDate' }}
+                      </span>
+                      @if (period.endDate) {
+                        <span class="text-sm text-slate-600">
+                          &mdash; Baja: {{ period.endDate | date: 'mediumDate' }}
+                        </span>
+                      }
+                    </div>
+
+                    @if (period.terminationReason) {
+                      <span class="text-xs font-medium text-rose-700">
+                        Motivo: {{ terminationReasonLabels[period.terminationReason] }}
+                      </span>
+                    }
+                  </div>
+
+                  <div
+                    tabindex="0"
+                    role="region"
+                    [attr.aria-label]="'Cambios del periodo iniciado el ' + period.startDate"
+                    class="table-wrapper rounded-lg border border-slate-200"
+                  >
+                    <table
+                      style="
+                        --label-2: 'Cargo / Puesto';
+                        --label-3: 'Contrato';
+                        --label-4: 'Salario Base';
+                      "
+                    >
+                      <thead class="bg-slate-50 text-left text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                        <tr>
+                          <th scope="col" class="px-4 py-2.5 border-b border-slate-200">Vigente Desde</th>
+                          <th scope="col" class="px-4 py-2.5 border-b border-slate-200">Cargo / Puesto</th>
+                          <th scope="col" class="px-4 py-2.5 border-b border-slate-200">Contrato</th>
+                          <th scope="col" class="px-4 py-2.5 border-b border-slate-200 text-right">Salario Base</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100 text-sm">
+                        @for (change of period.changes; track change.employmentChangeId) {
+                          <tr>
+                            <th scope="row" class="px-4 py-3 text-left font-medium text-slate-700">
+                              {{ change.effectiveFrom | date: 'mediumDate' }}
+                            </th>
+                            <td class="px-4 py-3 font-semibold text-slate-900">
+                              {{ change.jobTitle }}
+                            </td>
+                            <td class="px-4 py-3 text-xs text-slate-600">
+                              {{ contractLabels[change.contractType] }}
+                            </td>
+                            <td class="px-4 py-3 text-right font-mono font-bold text-slate-900">
+                              {{ change.baseSalary | currency: 'USD' : 'symbol' : '1.2-2' }}
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </section>
       }
     </div>
   `,
@@ -652,21 +963,16 @@ export class EmployeeDetailComponent implements OnInit {
 
   employeeId = '';
   readonly employee = signal<EmployeeDetails | null>(null);
+  readonly employmentHistory = signal<EmploymentPeriodDetails[]>([]);
   readonly departments = signal<DepartmentDetails[]>([]);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
-
-  readonly editingEmployee = signal(false);
-  readonly savingEmployee = signal(false);
   readonly saveSuccessMessage = signal<string | null>(null);
 
-  readonly creatingPeriod = signal(false);
-  readonly savingPeriod = signal(false);
+  readonly activePanel = signal<'none' | 'edit' | 'period' | 'change' | 'terminate'>('none');
+  readonly savingAction = signal(false);
   readonly periodSubmitAttempted = signal(false);
-  readonly lastCreatedPeriod = signal<
-    (CreateEmploymentPeriodRequest & { employmentPeriodId: string }) | null
-  >(null);
 
   readonly selectedDepartmentId = signal<string>('');
   readonly selectedMunicipalityId = signal<string>('');
@@ -676,6 +982,20 @@ export class EmployeeDetailComponent implements OnInit {
   readonly genderLabels = GENDER_LABELS;
   readonly contractLabels = CONTRACT_TYPE_LABELS;
   readonly pensionLabels = PENSION_FUND_LABELS;
+  readonly statusLabels = EMPLOYMENT_STATUS_LABELS;
+  readonly terminationReasonLabels = TERMINATION_REASON_LABELS;
+
+  readonly activePeriod = computed<EmploymentPeriodDetails | null>(
+    () => this.employmentHistory().find((p) => p.status === 'ACTIVE') ?? null
+  );
+
+  readonly currentEmployment = computed<EmploymentChangeDetails | null>(() => {
+    const changes = this.activePeriod()?.changes ?? [];
+    if (changes.length === 0) return null;
+    return changes.reduce((latest, candidate) =>
+      candidate.effectiveFrom > latest.effectiveFrom ? candidate : latest
+    );
+  });
 
   readonly genderOptions: { value: Gender; label: string }[] = [
     { value: 'MALE', label: GENDER_LABELS.MALE },
@@ -694,6 +1014,16 @@ export class EmployeeDetailComponent implements OnInit {
     { value: 'CONTRACTOR', label: CONTRACT_TYPE_LABELS.CONTRACTOR },
     { value: 'INTERN', label: CONTRACT_TYPE_LABELS.INTERN },
     { value: 'TEMPORARY', label: CONTRACT_TYPE_LABELS.TEMPORARY },
+  ];
+
+  readonly terminationReasonOptions: { value: TerminationReason; label: string }[] = [
+    { value: 'RESIGNATION', label: TERMINATION_REASON_LABELS.RESIGNATION },
+    { value: 'DISMISSAL', label: TERMINATION_REASON_LABELS.DISMISSAL },
+    { value: 'MUTUAL_AGREEMENT', label: TERMINATION_REASON_LABELS.MUTUAL_AGREEMENT },
+    { value: 'CONTRACT_EXPIRATION', label: TERMINATION_REASON_LABELS.CONTRACT_EXPIRATION },
+    { value: 'RETIREMENT', label: TERMINATION_REASON_LABELS.RETIREMENT },
+    { value: 'DEATH', label: TERMINATION_REASON_LABELS.DEATH },
+    { value: 'OTHER', label: TERMINATION_REASON_LABELS.OTHER },
   ];
 
   readonly resolvedLocation = computed<ResolvedLocation | null>(() => {
@@ -736,6 +1066,18 @@ export class EmployeeDetailComponent implements OnInit {
     baseSalary: ['', [Validators.required, Validators.pattern(/^\d+(?:\.\d{1,2})?$/)]],
   });
 
+  readonly registerChangeForm = this.fb.nonNullable.group({
+    effectiveFrom: [new Date().toISOString().slice(0, 10), [Validators.required]],
+    jobTitle: ['', [Validators.required, Validators.maxLength(100)]],
+    contractType: ['FULL_TIME' as ContractType, [Validators.required]],
+    baseSalary: ['', [Validators.required, Validators.pattern(/^\d+(?:\.\d{1,2})?$/)]],
+  });
+
+  readonly terminateForm = this.fb.nonNullable.group({
+    endDate: [new Date().toISOString().slice(0, 10), [Validators.required]],
+    terminationReason: ['RESIGNATION' as TerminationReason, [Validators.required]],
+  });
+
   ngOnInit(): void {
     this.employeeId = this.route.snapshot.paramMap.get('id') ?? '';
     this.loadData();
@@ -748,10 +1090,12 @@ export class EmployeeDetailComponent implements OnInit {
     forkJoin({
       employee: this.employeeService.getEmployeeById(this.employeeId),
       hierarchy: this.locationService.getHierarchy(),
+      history: this.employmentPeriodService.getEmployeeHistory(this.employeeId),
     }).subscribe({
-      next: ({ employee, hierarchy }) => {
+      next: ({ employee, hierarchy, history }) => {
         this.employee.set(employee);
         this.departments.set(hierarchy);
+        this.employmentHistory.set(history);
         this.syncFormWithEmployee(employee, hierarchy);
         this.loading.set(false);
       },
@@ -768,24 +1112,29 @@ export class EmployeeDetailComponent implements OnInit {
   }
 
   toggleEditMode(): void {
-    const nextState = !this.editingEmployee();
-    this.editingEmployee.set(nextState);
-    this.creatingPeriod.set(false);
-    this.saveSuccessMessage.set(null);
-    this.actionError.set(null);
+    this.togglePanel('edit');
     const emp = this.employee();
-    if (nextState && emp) {
+    if (this.activePanel() === 'edit' && emp) {
       this.syncFormWithEmployee(emp, this.departments());
     }
   }
 
-  toggleEmploymentPeriodForm(): void {
-    const nextState = !this.creatingPeriod();
-    this.creatingPeriod.set(nextState);
-    this.editingEmployee.set(false);
+  togglePanel(panel: 'edit' | 'period' | 'change' | 'terminate'): void {
+    const nextPanel = this.activePanel() === panel ? 'none' : panel;
+    this.activePanel.set(nextPanel);
     this.saveSuccessMessage.set(null);
     this.actionError.set(null);
     this.periodSubmitAttempted.set(false);
+
+    if (nextPanel === 'change') {
+      const current = this.currentEmployment();
+      this.registerChangeForm.reset({
+        effectiveFrom: new Date().toISOString().slice(0, 10),
+        jobTitle: current?.jobTitle ?? '',
+        contractType: current?.contractType ?? 'FULL_TIME',
+        baseSalary: current ? current.baseSalary.toFixed(2) : '',
+      });
+    }
   }
 
   onDepartmentChange(deptId: string): void {
@@ -812,7 +1161,7 @@ export class EmployeeDetailComponent implements OnInit {
       return;
     }
 
-    this.savingEmployee.set(true);
+    this.savingAction.set(true);
     const raw = this.editForm.getRawValue();
     const payload: UpdateEmployeeRequest = {
       firstName: raw.firstName.trim(),
@@ -832,13 +1181,13 @@ export class EmployeeDetailComponent implements OnInit {
 
     this.employeeService.updateEmployee(this.employeeId, payload).subscribe({
       next: () => {
-        this.savingEmployee.set(false);
-        this.editingEmployee.set(false);
+        this.savingAction.set(false);
+        this.activePanel.set('none');
         this.saveSuccessMessage.set('Expediente del empleado actualizado correctamente.');
         this.loadData();
       },
       error: (err) => {
-        this.savingEmployee.set(false);
+        this.savingAction.set(false);
         this.actionError.set(
           extractApiErrorMessage(err, 'Error al actualizar el expediente del empleado.')
         );
@@ -855,39 +1204,107 @@ export class EmployeeDetailComponent implements OnInit {
       return;
     }
 
-    this.savingPeriod.set(true);
+    this.savingAction.set(true);
     const raw = this.employmentPeriodForm.getRawValue();
-    const normalizedSalary = Number(Number(raw.baseSalary.trim()).toFixed(2));
     const payload: CreateEmploymentPeriodRequest = {
       employeeId: this.employeeId,
       startDate: raw.startDate,
       jobTitle: raw.jobTitle.trim(),
       contractType: raw.contractType,
-      baseSalary: normalizedSalary,
+      baseSalary: Number(Number(raw.baseSalary.trim()).toFixed(2)),
     };
 
     this.employmentPeriodService.createEmploymentPeriod(payload).subscribe({
-      next: (res) => {
-        this.savingPeriod.set(false);
-        this.creatingPeriod.set(false);
-        this.lastCreatedPeriod.set({
-          ...payload,
-          employmentPeriodId: res.employmentPeriodId,
-        });
+      next: () => {
+        this.savingAction.set(false);
+        this.activePanel.set('none');
+        this.saveSuccessMessage.set('Periodo laboral activo registrado correctamente.');
         this.employmentPeriodForm.reset({
           startDate: new Date().toISOString().slice(0, 10),
           jobTitle: '',
           contractType: 'FULL_TIME',
           baseSalary: '',
         });
+        this.loadData();
       },
       error: (err) => {
-        this.savingPeriod.set(false);
+        this.savingAction.set(false);
         this.actionError.set(
           extractApiErrorMessage(
             err,
-            'No se pudo registrar el periodo laboral. Verifica si el empleado ya cuenta con un periodo activo.'
+            'No se pudo registrar el periodo laboral. Verifica que no exista otro periodo activo o solapado.'
           )
+        );
+      },
+    });
+  }
+
+  onRegisterChange(): void {
+    const period = this.activePeriod();
+    if (!period) return;
+    this.actionError.set(null);
+
+    if (this.registerChangeForm.invalid) {
+      this.registerChangeForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingAction.set(true);
+    const raw = this.registerChangeForm.getRawValue();
+    const payload: RegisterEmploymentChangeRequest = {
+      effectiveFrom: raw.effectiveFrom,
+      jobTitle: raw.jobTitle.trim(),
+      contractType: raw.contractType,
+      baseSalary: Number(Number(raw.baseSalary.trim()).toFixed(2)),
+    };
+
+    this.employmentPeriodService.registerChange(period.employmentPeriodId, payload).subscribe({
+      next: () => {
+        this.savingAction.set(false);
+        this.activePanel.set('none');
+        this.saveSuccessMessage.set('Cambio laboral registrado en el historial correctamente.');
+        this.loadData();
+      },
+      error: (err) => {
+        this.savingAction.set(false);
+        this.actionError.set(
+          extractApiErrorMessage(
+            err,
+            'No se pudo registrar el cambio laboral. Verifica la fecha de vigencia.'
+          )
+        );
+      },
+    });
+  }
+
+  onTerminatePeriod(): void {
+    const period = this.activePeriod();
+    if (!period) return;
+    this.actionError.set(null);
+
+    if (this.terminateForm.invalid) {
+      this.terminateForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingAction.set(true);
+    const raw = this.terminateForm.getRawValue();
+    const payload: TerminateEmploymentPeriodRequest = {
+      endDate: raw.endDate,
+      terminationReason: raw.terminationReason,
+    };
+
+    this.employmentPeriodService.terminatePeriod(period.employmentPeriodId, payload).subscribe({
+      next: () => {
+        this.savingAction.set(false);
+        this.activePanel.set('none');
+        this.saveSuccessMessage.set('Periodo laboral finalizado (baja registrada) correctamente.');
+        this.loadData();
+      },
+      error: (err) => {
+        this.savingAction.set(false);
+        this.actionError.set(
+          extractApiErrorMessage(err, 'No se pudo finalizar el periodo laboral.')
         );
       },
     });

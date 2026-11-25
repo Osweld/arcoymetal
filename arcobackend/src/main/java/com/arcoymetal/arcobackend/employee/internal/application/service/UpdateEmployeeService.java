@@ -50,9 +50,9 @@ public class UpdateEmployeeService implements UpdateEmployeeUseCase {
                 new BirthDate(command.birthDate()),
                 new Address(new AddressLine(command.addressLine()), new DistrictId(command.districtId())),
                 new DUI(command.dui()),
-                command.nit() != null ? new NIT(command.nit()) : null,
-                command.isss() != null ? new ISSS(command.isss()) : null,
-                command.nup() != null ? new NUP(command.nup()) : null,
+                hasText(command.nit()) ? new NIT(command.nit()) : null,
+                hasText(command.isss()) ? new ISSS(command.isss()) : null,
+                hasText(command.nup()) ? new NUP(command.nup()) : null,
                 command.pensionFundInstitution(),
                 clock);
 
@@ -66,8 +66,30 @@ public class UpdateEmployeeService implements UpdateEmployeeUseCase {
             throw new DuplicateEmployeeException("An employee with the provided DUI already exists.");
         }
 
+        if (updatedEmployee.getNit() != null
+                && !Objects.equals(updatedEmployee.getNit(), existingEmployee.getNit())
+                && employeeRepository.existsByNit(updatedEmployee.getNit().value())) {
+            throw new DuplicateEmployeeException("An employee with the provided NIT already exists.");
+        }
+
+        if (updatedEmployee.getIsss() != null
+                && !Objects.equals(updatedEmployee.getIsss(), existingEmployee.getIsss())
+                && employeeRepository.existsByIsss(updatedEmployee.getIsss().value())) {
+            throw new DuplicateEmployeeException("An employee with the provided ISSS already exists.");
+        }
+
+        if (updatedEmployee.getNup() != null
+                && !Objects.equals(updatedEmployee.getNup(), existingEmployee.getNup())
+                && employeeRepository.existsByNup(updatedEmployee.getNup().value())) {
+            throw new DuplicateEmployeeException("An employee with the provided NUP already exists.");
+        }
+
         employeeRepository.save(updatedEmployee);
 
         return updatedEmployee.getEmployeeId();
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

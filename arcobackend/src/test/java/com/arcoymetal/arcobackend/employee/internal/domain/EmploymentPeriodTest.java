@@ -24,6 +24,8 @@ import com.arcoymetal.arcobackend.employee.internal.domain.employment.EndDate;
 import com.arcoymetal.arcobackend.employee.internal.domain.employment.JobTitle;
 import com.arcoymetal.arcobackend.employee.internal.domain.employment.StartDate;
 import com.arcoymetal.arcobackend.employee.internal.domain.employment.TerminationReason;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.DuplicateEmploymentChangeDateException;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.EmploymentPeriodNotActiveException;
 
 class EmploymentPeriodTest {
 
@@ -184,5 +186,109 @@ class EmploymentPeriodTest {
                         List.of(change)
                 ))
                 .withMessage("End date cannot be before start date");
+    }
+
+    @Test
+    void shouldRegisterEmploymentChangeWithoutMutatingPreviousHistory() {
+        EmploymentId employmentId = EmploymentId.generate();
+        EmployeeId employeeId = EmployeeId.generate();
+        StartDate startDate = new StartDate(LocalDate.of(2026, 1, 1));
+        EmploymentChange initial = EmploymentChange.create(
+                EmploymentChangeId.generate(),
+                employmentId,
+                new JobTitle("Soldador I"),
+                ContractType.FULL_TIME,
+                new BaseSalary(new BigDecimal("500.00")),
+                new EffectiveFrom(LocalDate.of(2026, 1, 1))
+        );
+
+        EmploymentPeriod active = EmploymentPeriod.create(employmentId, employeeId, startDate, List.of(initial));
+
+        EmploymentChange raise = EmploymentChange.create(
+                EmploymentChangeId.generate(),
+                employmentId,
+                new JobTitle("Soldador II"),
+                ContractType.FULL_TIME,
+                new BaseSalary(new BigDecimal("650.00")),
+                new EffectiveFrom(LocalDate.of(2026, 6, 1))
+        );
+
+        EmploymentPeriod updated = active.registerChange(raise);
+
+        assertThat(active.getEmploymentChanges()).hasSize(1);
+        assertThat(updated.getEmploymentChanges()).containsExactly(initial, raise);
+
+        // Reject duplicate effectiveFrom date
+        assertThatThrownBy(() -> updated.registerChange(EmploymentChange.create(
+                EmploymentChangeId.generate(),
+                employmentId,
+                new JobTitle("Duplicado"),
+                ContractType.FULL_TIME,
+                new BaseSalary(new BigDecimal("700.00")),
+                new EffectiveFrom(LocalDate.of(2026, 6, 1))
+        ))).isInstanceOf(DuplicateEmploymentChangeDateException.class);
+
+        // Reject effectiveFrom before startDate
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> active.registerChange(EmploymentChange.create(
+                        EmploymentChangeId.generate(),
+                        employmentId,
+                        new JobTitle("Anterior"),
+                        ContractType.FULL_TIME,
+                        new BaseSalary(new BigDecimal("500.00")),
+                        new EffectiveFrom(LocalDate.of(2025, 12, 31))
+                )))
+                .withMessage("EffectiveFrom date cannot be before employment period startDate");
+    }
+
+    @Test
+    void shouldTerminateActivePeriodAndRejectChangesOrSecondTermination() {
+        EmploymentId employmentId = EmploymentId.generate();
+        EmployeeId employeeId = EmployeeId.generate();
+        StartDate startDate = new StartDate(LocalDate.of(2026, 1, 1));
+        EmploymentChange initial = EmploymentChange.create(
+                EmploymentChangeId.generate(),
+                employmentId,
+                new JobTitle("Operario"),
+                ContractType.FULL_TIME,
+                new BaseSalary(new BigDecimal("450.00")),
+                new EffectiveFrom(LocalDate.of(2026, 1, 1))
+        );
+
+        EmploymentPeriod active = EmploymentPeriod.create(employmentId, employeeId, startDate, List.of(initial));
+
+        // Reject endDate before startDate
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> active.terminate(
+                        new EndDate(LocalDate.of(2025, 12, 31)),
+                        TerminationReason.RESIGNATION
+                ))
+                .withMessage("End date cannot be before start date");
+
+        EmploymentPeriod terminated = active.terminate(
+                new EndDate(LocalDate.of(2026, 10, 31)),
+                TerminationReason.MUTUAL_AGREEMENT
+        );
+
+        assertThat(terminated.getStatus()).isEqualTo(EmploymentStatus.TERMINATED);
+        assertThat(terminated.getEndDate().value()).isEqualTo(LocalDate.of(2026, 10, 31));
+        assertThat(terminated.getTerminationReason()).isEqualTo(TerminationReason.MUTUAL_AGREEMENT);
+        assertThat(terminated.getEmploymentChanges()).containsExactly(initial);
+
+        // Reject change on terminated period
+        assertThatThrownBy(() -> terminated.registerChange(EmploymentChange.create(
+                EmploymentChangeId.generate(),
+                employmentId,
+                new JobTitle("No permitido"),
+                ContractType.FULL_TIME,
+                new BaseSalary(new BigDecimal("500.00")),
+                new EffectiveFrom(LocalDate.of(2026, 11, 1))
+        ))).isInstanceOf(EmploymentPeriodNotActiveException.class);
+
+        // Reject terminating an already terminated period
+        assertThatThrownBy(() -> terminated.terminate(
+                new EndDate(LocalDate.of(2026, 11, 1)),
+                TerminationReason.OTHER
+        )).isInstanceOf(EmploymentPeriodNotActiveException.class);
     }
 }
