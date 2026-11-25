@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { MainLayoutComponent } from './core/layout/main-layout/main-layout.component';
-import { authGuard } from './core/auth/guards/auth.guard';
+import { authGuard, roleGuard } from './core/auth/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -53,6 +53,7 @@ export const routes: Routes = [
       },
       {
         path: 'users',
+        canActivate: [roleGuard(['ADMINISTRATOR'])],
         loadComponent: () =>
           import('./features/identity-access/pages/user-list/user-list.component').then(
             (m) => m.UserListComponent
@@ -61,6 +62,7 @@ export const routes: Routes = [
       },
       {
         path: 'users/new',
+        canActivate: [roleGuard(['ADMINISTRATOR'])],
         loadComponent: () =>
           import('./features/identity-access/pages/user-form/user-form.component').then(
             (m) => m.UserFormComponent

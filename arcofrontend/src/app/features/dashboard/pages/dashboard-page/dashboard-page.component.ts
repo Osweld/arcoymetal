@@ -1,19 +1,18 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 import { EmployeeService } from '../../../employee/services/employee.service';
 import { UserService } from '../../../identity-access/services/user.service';
 import {
-  CONTRACT_TYPE_LABELS,
-  EMPLOYEE_STATUS_LABELS,
   EmployeeDetails,
+  PENSION_FUND_LABELS,
 } from '../../../employee/models/employee.model';
 import { ROLE_LABELS, UserSummary } from '../../../identity-access/models/user.model';
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [RouterLink, CurrencyPipe, DatePipe],
+  imports: [RouterLink, DatePipe],
   template: `
     <div class="space-y-6">
       <!-- Welcome & Quick Actions Banner -->
@@ -29,7 +28,7 @@ import { ROLE_LABELS, UserSummary } from '../../../identity-access/models/user.m
               Panel de Control Administrativo
             </h2>
             <p class="text-sm text-slate-300 leading-relaxed">
-              Centralización de planilla operativa, expediente de empleados, jerarquía geográfica de El Salvador y control de acceso basado en roles (RBAC).
+              Centralización de expedientes de empleados, jerarquía geográfica de El Salvador, control de acceso basado en roles (RBAC) y planilla operativa.
             </p>
           </div>
 
@@ -83,7 +82,7 @@ import { ROLE_LABELS, UserSummary } from '../../../identity-access/models/user.m
       }
 
       <!-- KPI Cards -->
-      <section aria-label="Indicadores principales" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="Indicadores principales" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs">
           <div class="flex items-center justify-between">
             <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -95,23 +94,8 @@ import { ROLE_LABELS, UserSummary } from '../../../identity-access/models/user.m
               </svg>
             </span>
           </div>
-          <p class="mt-3 text-3xl font-extrabold text-slate-900">{{ employees().length }}</p>
-          <p class="mt-1 text-xs text-slate-500">Registrados en módulo Employee</p>
-        </div>
-
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Personal Activo
-            </span>
-            <span class="rounded-lg bg-emerald-50 p-2 text-emerald-700">
-              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </span>
-          </div>
-          <p class="mt-3 text-3xl font-extrabold text-emerald-700">{{ activeEmployeesCount() }}</p>
-          <p class="mt-1 text-xs text-slate-500">Con contrato vigente en planta/administración</p>
+          <p class="mt-3 text-3xl font-extrabold text-slate-900">{{ totalEmployeesCount() }}</p>
+          <p class="mt-1 text-xs text-slate-500">Expedientes registrados en módulo Employee</p>
         </div>
 
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs">
@@ -126,24 +110,7 @@ import { ROLE_LABELS, UserSummary } from '../../../identity-access/models/user.m
             </span>
           </div>
           <p class="mt-3 text-3xl font-extrabold text-slate-900">{{ totalUsersCount() }}</p>
-          <p class="mt-1 text-xs text-slate-500">Vinculadas en IdentityAccess</p>
-        </div>
-
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Masa Salarial Base
-            </span>
-            <span class="rounded-lg bg-blue-50 p-2 text-blue-700">
-              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </span>
-          </div>
-          <p class="mt-3 text-2xl font-extrabold text-slate-900">
-            {{ totalMonthlyPayroll() | currency: 'USD' : 'symbol' : '1.2-2' }}
-          </p>
-          <p class="mt-1 text-xs text-slate-500">Suma de salarios base activos</p>
+          <p class="mt-1 text-xs text-slate-500">Vinculadas 1:1 en IdentityAccess</p>
         </div>
       </section>
 
@@ -167,7 +134,7 @@ import { ROLE_LABELS, UserSummary } from '../../../identity-access/models/user.m
           <div class="divide-y divide-slate-100 flex-1">
             @if (loading()) {
               <div class="p-6 text-center text-sm text-slate-500">Cargando empleados...</div>
-            } @else if (employees().length === 0) {
+            } @else if (recentEmployees().length === 0) {
               <div class="p-8 text-center">
                 <p class="text-sm font-medium text-slate-700">Aún no hay empleados registrados</p>
                 <p class="mt-1 text-xs text-slate-500">
@@ -181,27 +148,21 @@ import { ROLE_LABELS, UserSummary } from '../../../identity-access/models/user.m
                 </a>
               </div>
             } @else {
-              @for (emp of employees().slice(0, 5); track emp.id) {
+              @for (emp of recentEmployees(); track emp.employeeId) {
                 <div class="flex items-center justify-between px-5 py-3.5 hover:bg-slate-50">
                   <div class="min-w-0">
                     <a
-                      [routerLink]="['/employees', emp.id]"
+                      [routerLink]="['/employees', emp.employeeId]"
                       class="truncate text-sm font-semibold text-slate-900 hover:text-amber-700"
                     >
                       {{ emp.firstName }} {{ emp.lastName }}
                     </a>
                     <p class="truncate text-xs text-slate-500">
-                      {{ emp.jobTitle }} &bull; {{ contractLabels[emp.contractType] }}
+                      DUI: {{ emp.dui }} &bull; {{ pensionLabels[emp.pensionFundInstitution] }}
                     </p>
                   </div>
-                  <span
-                    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                    [class.bg-emerald-50]="emp.status === 'ACTIVE'"
-                    [class.text-emerald-700]="emp.status === 'ACTIVE'"
-                    [class.bg-slate-100]="emp.status !== 'ACTIVE'"
-                    [class.text-slate-600]="emp.status !== 'ACTIVE'"
-                  >
-                    {{ statusLabels[emp.status] }}
+                  <span class="text-xs text-slate-500 shrink-0">
+                    {{ emp.createdAt | date: 'mediumDate' }}
                   </span>
                 </div>
               }
@@ -271,32 +232,30 @@ export class DashboardPageComponent implements OnInit {
   private readonly employeeService = inject(EmployeeService);
   private readonly userService = inject(UserService);
 
-  readonly employees = signal<EmployeeDetails[]>([]);
+  readonly recentEmployees = signal<EmployeeDetails[]>([]);
+  readonly totalEmployeesCount = signal(0);
   readonly recentUsers = signal<UserSummary[]>([]);
   readonly totalUsersCount = signal(0);
   readonly loading = signal(true);
   readonly backendOffline = signal(false);
 
-  readonly contractLabels = CONTRACT_TYPE_LABELS;
-  readonly statusLabels = EMPLOYEE_STATUS_LABELS;
+  readonly pensionLabels = PENSION_FUND_LABELS;
   readonly roleLabels = ROLE_LABELS;
-
-  readonly activeEmployeesCount = computed(
-    () => this.employees().filter((e) => e.status === 'ACTIVE').length
-  );
-
-  readonly totalMonthlyPayroll = computed(() =>
-    this.employees()
-      .filter((e) => e.status === 'ACTIVE')
-      .reduce((sum, emp) => sum + Number(emp.baseSalary || 0), 0)
-  );
 
   ngOnInit(): void {
     forkJoin({
-      employees: this.employeeService.getAllEmployees().pipe(
+      employeesPage: this.employeeService.getEmployeesPage(0, 5).pipe(
         catchError(() => {
           this.backendOffline.set(true);
-          return of([] as EmployeeDetails[]);
+          return of({
+            content: [] as EmployeeDetails[],
+            page: 0,
+            size: 5,
+            totalElements: 0,
+            totalPages: 0,
+            first: true,
+            last: true,
+          });
         })
       ),
       usersPage: this.userService.getUsers(0, 5).pipe(
@@ -313,8 +272,9 @@ export class DashboardPageComponent implements OnInit {
           });
         })
       ),
-    }).subscribe(({ employees, usersPage }) => {
-      this.employees.set(employees);
+    }).subscribe(({ employeesPage, usersPage }) => {
+      this.recentEmployees.set(employeesPage.content);
+      this.totalEmployeesCount.set(employeesPage.totalElements);
       this.recentUsers.set(usersPage.content);
       this.totalUsersCount.set(usersPage.totalElements);
       this.loading.set(false);

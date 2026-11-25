@@ -22,15 +22,7 @@ export interface CreateUserResponse {
   userId: string;
 }
 
-export interface PageResult<T> {
-  content: T[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-  first: boolean;
-  last: boolean;
-}
+export type { PageResult } from '../../../shared/models/pagination.model';
 
 export const ROLE_LABELS: Record<Role, string> = {
   ADMINISTRATOR: 'Administrador',

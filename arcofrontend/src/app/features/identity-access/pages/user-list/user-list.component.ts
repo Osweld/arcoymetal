@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, map, of } from 'rxjs';
 import { UserService } from '../../services/user.service';
 import { EmployeeService } from '../../../employee/services/employee.service';
 import {
@@ -11,6 +11,7 @@ import {
   UserSummary,
 } from '../../models/user.model';
 import { EmployeeDetails } from '../../../employee/models/employee.model';
+import { extractApiErrorMessage } from '../../../../shared/models/api-error.model';
 
 @Component({
   selector: 'app-user-list',
@@ -121,12 +122,12 @@ import { EmployeeDetails } from '../../../employee/models/employee.model';
                     <td class="px-5 py-4">
                       @if (employeeMap().get(user.employeeId); as emp) {
                         <a
-                          [routerLink]="['/employees', emp.id]"
+                          [routerLink]="['/employees', emp.employeeId]"
                           class="font-semibold text-amber-700 hover:text-amber-800 hover:underline"
                         >
                           {{ emp.firstName }} {{ emp.lastName }}
                         </a>
-                        <div class="text-xs text-slate-500">{{ emp.jobTitle }}</div>
+                        <div class="text-xs text-slate-500">DUI: {{ emp.dui }}</div>
                       } @else {
                         <a
                           [routerLink]="['/employees', user.employeeId]"
@@ -227,7 +228,7 @@ export class UserListComponent implements OnInit {
   readonly employeeMap = computed(() => {
     const map = new Map<string, EmployeeDetails>();
     for (const emp of this.employees()) {
-      map.set(emp.id, emp);
+      map.set(emp.employeeId, emp);
     }
     return map;
   });
@@ -243,7 +244,10 @@ export class UserListComponent implements OnInit {
 
     forkJoin({
       users: this.userService.getUsers(page, this.pageSize()),
-      employees: this.employeeService.getAllEmployees().pipe(catchError(() => of([] as EmployeeDetails[]))),
+      employees: this.employeeService.getEmployeesPage(0, 100).pipe(
+        map((res) => res.content),
+        catchError(() => of([] as EmployeeDetails[]))
+      ),
     }).subscribe({
       next: ({ users, employees }) => {
         this.currentPage.set(users.page);
@@ -251,9 +255,12 @@ export class UserListComponent implements OnInit {
         this.employees.set(employees);
         this.loading.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.errorMessage.set(
-          'No se pudo consultar GET /api/v1/users. Verifica que el backend esté en ejecución.'
+          extractApiErrorMessage(
+            err,
+            'No se pudo consultar GET /api/v1/users. Verifica que el backend esté en ejecución.'
+          )
         );
         this.loading.set(false);
       },

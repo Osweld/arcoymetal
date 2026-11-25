@@ -5,6 +5,7 @@ import { UserService } from '../../services/user.service';
 import { EmployeeService } from '../../../employee/services/employee.service';
 import { CreateUserRequest, ROLE_LABELS, Role } from '../../models/user.model';
 import { EmployeeDetails } from '../../../employee/models/employee.model';
+import { extractApiErrorMessage } from '../../../../shared/models/api-error.model';
 
 @Component({
   selector: 'app-user-form',
@@ -66,9 +67,9 @@ import { EmployeeDetails } from '../../../employee/models/employee.model';
               class="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base sm:text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
             >
               <option value="">Selecciona un empleado registrado...</option>
-              @for (emp of employees(); track emp.id) {
-                <option [value]="emp.id">
-                  {{ emp.firstName }} {{ emp.lastName }} &mdash; {{ emp.jobTitle }} (DUI: {{ emp.dui }})
+              @for (emp of employees(); track emp.employeeId) {
+                <option [value]="emp.employeeId">
+                  {{ emp.firstName }} {{ emp.lastName }} &mdash; DUI: {{ emp.dui }} ({{ emp.email }})
                 </option>
               }
             </select>
@@ -223,12 +224,12 @@ export class UserFormComponent implements OnInit {
     {
       value: 'ADMINISTRATOR',
       label: ROLE_LABELS.ADMINISTRATOR,
-      description: 'Acceso completo a configuración, usuarios, empleados, inventario y planillas.',
+      description: 'Acceso completo a gestión de personal, usuarios/accesos y planillas.',
     },
     {
       value: 'MANAGER',
       label: ROLE_LABELS.MANAGER,
-      description: 'Gestión operativa de personal, consultas e inventario.',
+      description: 'Gestión operativa de personal y consultas administrativas.',
     },
   ];
 
@@ -241,24 +242,27 @@ export class UserFormComponent implements OnInit {
   ngOnInit(): void {
     const preselectedEmployeeId = this.route.snapshot.queryParamMap.get('employeeId') ?? '';
 
-    this.employeeService.getAllEmployees().subscribe({
-      next: (list) => {
-        this.employees.set(list);
+    this.employeeService.getEmployeesPage(0, 100).subscribe({
+      next: (page) => {
+        this.employees.set(page.content);
         if (preselectedEmployeeId) {
           this.userForm.controls.employeeId.setValue(preselectedEmployeeId);
           this.onEmployeeSelected(preselectedEmployeeId);
         }
       },
-      error: () => {
+      error: (err) => {
         this.serverError.set(
-          'No se pudo cargar la lista de empleados desde GET /api/v1/employees.'
+          extractApiErrorMessage(
+            err,
+            'No se pudo cargar la lista de empleados desde GET /api/v1/employees.'
+          )
         );
       },
     });
   }
 
   onEmployeeSelected(employeeId: string): void {
-    const emp = this.employees().find((e) => e.id === employeeId);
+    const emp = this.employees().find((e) => e.employeeId === employeeId);
     if (emp && !this.userForm.controls.email.dirty) {
       this.userForm.controls.email.setValue(emp.email);
     }
@@ -308,8 +312,10 @@ export class UserFormComponent implements OnInit {
       error: (err) => {
         this.isSubmitting.set(false);
         this.serverError.set(
-          err?.error?.message ||
+          extractApiErrorMessage(
+            err,
             'No se pudo crear el usuario. Verifica que el empleado no tenga ya una cuenta asignada y que el correo sea único.'
+          )
         );
       },
     });

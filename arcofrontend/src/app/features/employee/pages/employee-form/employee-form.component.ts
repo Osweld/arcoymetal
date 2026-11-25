@@ -4,8 +4,6 @@ import { Router, RouterLink } from '@angular/router';
 import { EmployeeService } from '../../services/employee.service';
 import { LocationService } from '../../services/location.service';
 import {
-  CONTRACT_TYPE_LABELS,
-  ContractType,
   CreateEmployeeRequest,
   GENDER_LABELS,
   Gender,
@@ -17,6 +15,7 @@ import {
   DistrictDetails,
   MunicipalityDetails,
 } from '../../models/location.model';
+import { extractApiErrorMessage } from '../../../../shared/models/api-error.model';
 
 @Component({
   selector: 'app-employee-form',
@@ -36,7 +35,7 @@ import {
             Registrar Nuevo Empleado
           </h2>
           <p class="text-sm text-slate-500">
-            Completa las secciones de información personal, ubicación geográfica, contratación e identificación legal.
+            Registra el expediente personal, domicilio e identificación legal salvadoreña. No crea usuario del sistema automáticamente; el periodo laboral y la cuenta de acceso se gestionan de forma independiente desde el expediente.
           </p>
         </div>
       </div>
@@ -177,9 +176,12 @@ import {
                 formControlName="birthDate"
                 autocomplete="bday"
                 required
-                [attr.aria-describedby]="showError('birthDate') ? 'err-birthDate' : null"
+                [attr.aria-describedby]="showError('birthDate') ? 'err-birthDate' : 'help-birthDate'"
                 class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
               />
+              <span id="help-birthDate" class="mt-1 block text-[11px] text-slate-500">
+                El empleado debe tener al menos 18 años cumplidos.
+              </span>
               @if (showError('birthDate')) {
                 <p id="err-birthDate" role="alert" class="mt-1 text-xs font-medium text-rose-600">
                   Indica una fecha de nacimiento válida en el pasado.
@@ -308,108 +310,10 @@ import {
           </div>
         </fieldset>
 
-        <!-- 3. Información Laboral y Contractual -->
+        <!-- 3. Identificación Legal y Previsional -->
         <fieldset class="rounded-xl border border-slate-200 bg-white p-6 shadow-2xs space-y-5">
           <legend class="px-2 text-base font-bold text-slate-900">
-            3. Información Laboral y Salarial
-          </legend>
-
-          <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
-            <div>
-              <label for="emp-jobTitle" class="block text-sm font-semibold text-slate-800 mb-1.5">
-                Cargo / Puesto <span class="text-rose-600">*</span>
-              </label>
-              <input
-                id="emp-jobTitle"
-                name="jobTitle"
-                type="text"
-                formControlName="jobTitle"
-                maxlength="100"
-                placeholder="Ej. Maestro de Obra, Soldador MIG..."
-                required
-                [attr.aria-describedby]="showError('jobTitle') ? 'err-jobTitle' : null"
-                class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-              />
-              @if (showError('jobTitle')) {
-                <p id="err-jobTitle" role="alert" class="mt-1 text-xs font-medium text-rose-600">
-                  El cargo es obligatorio.
-                </p>
-              }
-            </div>
-
-            <div>
-              <label for="emp-baseSalary" class="block text-sm font-semibold text-slate-800 mb-1.5">
-                Salario Base Mensual (USD $) <span class="text-rose-600">*</span>
-              </label>
-              <input
-                id="emp-baseSalary"
-                name="baseSalary"
-                type="number"
-                step="0.01"
-                min="0"
-                formControlName="baseSalary"
-                required
-                [attr.aria-describedby]="showError('baseSalary') ? 'err-baseSalary' : null"
-                class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-              />
-              @if (showError('baseSalary')) {
-                <p id="err-baseSalary" role="alert" class="mt-1 text-xs font-medium text-rose-600">
-                  Ingresa un salario base mayor o igual a $0.00.
-                </p>
-              }
-            </div>
-
-            <div>
-              <label for="emp-hireDate" class="block text-sm font-semibold text-slate-800 mb-1.5">
-                Fecha de Contratación <span class="text-rose-600">*</span>
-              </label>
-              <input
-                id="emp-hireDate"
-                name="hireDate"
-                type="date"
-                formControlName="hireDate"
-                required
-                [attr.aria-describedby]="showError('hireDate') ? 'err-hireDate' : null"
-                class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-              />
-              @if (showError('hireDate')) {
-                <p id="err-hireDate" role="alert" class="mt-1 text-xs font-medium text-rose-600">
-                  La fecha de contratación es obligatoria.
-                </p>
-              }
-            </div>
-
-            <div class="sm:col-span-3">
-              <span class="block text-sm font-semibold text-slate-800 mb-2">
-                Modalidad de Contrato <span class="text-rose-600">*</span>
-              </span>
-              <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
-                @for (ct of contractTypeOptions; track ct.value) {
-                  <label
-                    class="flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-semibold cursor-pointer transition-colors"
-                    [class.border-amber-500]="employeeForm.controls.contractType.value === ct.value"
-                    [class.bg-amber-50/70]="employeeForm.controls.contractType.value === ct.value"
-                    [class.border-slate-300]="employeeForm.controls.contractType.value !== ct.value"
-                  >
-                    <input
-                      type="radio"
-                      name="contractType"
-                      [value]="ct.value"
-                      formControlName="contractType"
-                      class="h-4 w-4 accent-amber-600 shrink-0"
-                    />
-                    <span>{{ ct.label }}</span>
-                  </label>
-                }
-              </div>
-            </div>
-          </div>
-        </fieldset>
-
-        <!-- 4. Identificación Legal y Previsional -->
-        <fieldset class="rounded-xl border border-slate-200 bg-white p-6 shadow-2xs space-y-5">
-          <legend class="px-2 text-base font-bold text-slate-900">
-            4. Identificación Legal y Previsional (El Salvador)
+            3. Identificación Legal y Previsional (El Salvador)
           </legend>
 
           <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -594,14 +498,6 @@ export class EmployeeFormComponent implements OnInit {
     { value: 'FEMALE', label: GENDER_LABELS.FEMALE },
   ];
 
-  readonly contractTypeOptions: { value: ContractType; label: string }[] = [
-    { value: 'FULL_TIME', label: CONTRACT_TYPE_LABELS.FULL_TIME },
-    { value: 'PART_TIME', label: CONTRACT_TYPE_LABELS.PART_TIME },
-    { value: 'CONTRACTOR', label: CONTRACT_TYPE_LABELS.CONTRACTOR },
-    { value: 'INTERN', label: CONTRACT_TYPE_LABELS.INTERN },
-    { value: 'TEMPORARY', label: CONTRACT_TYPE_LABELS.TEMPORARY },
-  ];
-
   readonly pensionFundOptions: { value: PensionFundInstitution; label: string }[] = [
     { value: 'AFP_CONFIA', label: PENSION_FUND_LABELS.AFP_CONFIA },
     { value: 'AFP_CRECER', label: PENSION_FUND_LABELS.AFP_CRECER },
@@ -616,16 +512,12 @@ export class EmployeeFormComponent implements OnInit {
     gender: ['MALE' as Gender, [Validators.required]],
     birthDate: ['', [Validators.required]],
     addressLine: ['', [Validators.required, Validators.maxLength(150)]],
-    districtId: ['', [Validators.required]],
-    jobTitle: ['', [Validators.required, Validators.maxLength(100)]],
-    baseSalary: [450.0, [Validators.required, Validators.min(0)]],
-    contractType: ['FULL_TIME' as ContractType, [Validators.required]],
+    districtId: ['', [Validators.required, Validators.maxLength(10)]],
     dui: ['', [Validators.required, Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
     nit: ['', [Validators.pattern(/^(?:\d{14}|\d{4}-\d{6}-\d{3}-\d)$/)]],
     isss: ['', [Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
     nup: ['', [Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
     pensionFundInstitution: ['AFP_CONFIA' as PensionFundInstitution, [Validators.required]],
-    hireDate: [new Date().toISOString().slice(0, 10), [Validators.required]],
   });
 
   ngOnInit(): void {
@@ -633,9 +525,12 @@ export class EmployeeFormComponent implements OnInit {
       next: (hierarchy) => {
         this.departments.set(hierarchy);
       },
-      error: () => {
+      error: (err) => {
         this.serverError.set(
-          'No se pudo cargar el catálogo geográfico desde GET /api/v1/locations/hierarchy.'
+          extractApiErrorMessage(
+            err,
+            'No se pudo cargar el catálogo geográfico desde GET /api/v1/locations/hierarchy.'
+          )
         );
       },
     });
@@ -678,15 +573,11 @@ export class EmployeeFormComponent implements OnInit {
       birthDate: raw.birthDate,
       addressLine: raw.addressLine.trim(),
       districtId: raw.districtId,
-      jobTitle: raw.jobTitle.trim(),
-      baseSalary: Number(raw.baseSalary),
-      contractType: raw.contractType,
       dui: raw.dui.trim(),
       nit: raw.nit.trim() ? raw.nit.trim() : null,
       isss: raw.isss.trim() ? raw.isss.trim() : null,
       nup: raw.nup.trim() ? raw.nup.trim() : null,
       pensionFundInstitution: raw.pensionFundInstitution,
-      hireDate: raw.hireDate,
     };
 
     this.employeeService.createEmployee(payload).subscribe({
@@ -697,8 +588,10 @@ export class EmployeeFormComponent implements OnInit {
       error: (err) => {
         this.isSubmitting.set(false);
         this.serverError.set(
-          err?.error?.message ||
+          extractApiErrorMessage(
+            err,
             'No se pudo guardar el empleado. Revisa que el DUI/correo no estén duplicados y que los datos cumplan las reglas del dominio.'
+          )
         );
       },
     });

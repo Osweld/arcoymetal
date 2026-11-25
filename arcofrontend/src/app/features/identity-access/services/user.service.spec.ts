@@ -1,0 +1,92 @@
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { UserService } from './user.service';
+import { CreateUserRequest, PageResult, UserSummary } from '../models/user.model';
+
+describe('UserService', () => {
+  let service: UserService;
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    service = TestBed.inject(UserService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('requests paginated users from GET /api/v1/users', () => {
+    const mockPage: PageResult<UserSummary> = {
+      content: [
+        {
+          id: 'u-1',
+          employeeId: 'e-1',
+          email: 'admin@arcoymetal.com.sv',
+          roles: ['ADMINISTRATOR'],
+          status: 'ACTIVE',
+          createdAt: '2026-11-24T12:00:00Z',
+        },
+      ],
+      page: 0,
+      size: 10,
+      totalElements: 1,
+      totalPages: 1,
+      first: true,
+      last: true,
+    };
+
+    let received: PageResult<UserSummary> | undefined;
+    service.getUsers(0, 10).subscribe((res) => (received = res));
+
+    const req = httpMock.expectOne('/api/v1/users?page=0&size=10');
+    expect(req.request.method).toBe('GET');
+    req.flush(mockPage);
+
+    expect(received).toEqual(mockPage);
+  });
+
+  it('fetches a single user by id from GET /api/v1/users/:id', () => {
+    const mockUser: UserSummary = {
+      id: 'u-1',
+      employeeId: 'e-1',
+      email: 'admin@arcoymetal.com.sv',
+      roles: ['ADMINISTRATOR'],
+      status: 'ACTIVE',
+      createdAt: '2026-11-24T12:00:00Z',
+    };
+
+    let received: UserSummary | undefined;
+    service.getUserById('u-1').subscribe((res) => (received = res));
+
+    const req = httpMock.expectOne('/api/v1/users/u-1');
+    expect(req.request.method).toBe('GET');
+    req.flush(mockUser);
+
+    expect(received).toEqual(mockUser);
+  });
+
+  it('creates a user via POST /api/v1/users with 201 Created response', () => {
+    const payload: CreateUserRequest = {
+      employeeId: 'e-1',
+      email: 'manager@arcoymetal.com.sv',
+      password: 'Password123!',
+      roles: ['MANAGER'],
+    };
+
+    let receivedId: string | undefined;
+    service.createUser(payload).subscribe((res) => (receivedId = res.userId));
+
+    const req = httpMock.expectOne('/api/v1/users');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(payload);
+    req.flush({ userId: 'u-2' }, { status: 201, statusText: 'Created' });
+
+    expect(receivedId).toBe('u-2');
+  });
+});

@@ -9,10 +9,10 @@ export type ContractType =
 
 export type PensionFundInstitution = 'AFP_CONFIA' | 'AFP_CRECER' | 'ISP';
 
-export type EmployeeStatus = 'ACTIVE' | 'INACTIVE' | 'TERMINATED';
+export type EmploymentStatus = 'ACTIVE' | 'TERMINATED';
 
 export interface EmployeeDetails {
-  id: string;
+  employeeId: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -21,17 +21,12 @@ export interface EmployeeDetails {
   birthDate: string;
   addressLine: string;
   districtId: string;
-  jobTitle: string;
-  baseSalary: number;
-  contractType: ContractType;
   dui: string;
   nit: string | null;
   isss: string | null;
   nup: string | null;
   pensionFundInstitution: PensionFundInstitution;
-  hireDate: string;
-  terminationDate: string | null;
-  status: EmployeeStatus;
+  createdAt: string;
 }
 
 export interface CreateEmployeeRequest {
@@ -43,32 +38,33 @@ export interface CreateEmployeeRequest {
   birthDate: string;
   addressLine: string;
   districtId: string;
-  jobTitle: string;
-  baseSalary: number;
-  contractType: ContractType;
   dui: string;
   nit?: string | null;
   isss?: string | null;
   nup?: string | null;
   pensionFundInstitution: PensionFundInstitution;
-  hireDate: string;
 }
 
 export interface CreateEmployeeResponse {
   employeeId: string;
 }
 
-export interface UpdatePersonalInformationRequest {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  addressLine: string;
-  districtId: string;
+export type UpdateEmployeeRequest = CreateEmployeeRequest;
+
+export interface UpdateEmployeeResponse {
+  employeeId: string;
 }
 
-export interface UpdatePersonalInformationResponse {
+export interface CreateEmploymentPeriodRequest {
   employeeId: string;
+  startDate: string;
+  jobTitle: string;
+  contractType: ContractType;
+  baseSalary: number;
+}
+
+export interface CreateEmploymentPeriodResponse {
+  employmentPeriodId: string;
 }
 
 export const GENDER_LABELS: Record<Gender, string> = {
@@ -90,8 +86,7 @@ export const PENSION_FUND_LABELS: Record<PensionFundInstitution, string> = {
   ISP: 'Instituto Salvadoreño de Pensiones (ISP)',
 };
 
-export const EMPLOYEE_STATUS_LABELS: Record<EmployeeStatus, string> = {
+export const EMPLOYMENT_STATUS_LABELS: Record<EmploymentStatus, string> = {
   ACTIVE: 'Activo',
-  INACTIVE: 'Inactivo',
-  TERMINATED: 'Dado de baja',
+  TERMINATED: 'Finalizado / Baja',
 };

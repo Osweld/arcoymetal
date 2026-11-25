@@ -1,12 +1,13 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { PageResult } from '../../../shared/models/pagination.model';
 import {
   CreateEmployeeRequest,
   CreateEmployeeResponse,
   EmployeeDetails,
-  UpdatePersonalInformationRequest,
-  UpdatePersonalInformationResponse,
+  UpdateEmployeeRequest,
+  UpdateEmployeeResponse,
 } from '../models/employee.model';
 
 @Injectable({
@@ -16,8 +17,12 @@ export class EmployeeService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = '/api/v1/employees';
 
-  getAllEmployees(): Observable<EmployeeDetails[]> {
-    return this.http.get<EmployeeDetails[]>(this.apiUrl);
+  getEmployeesPage(page = 0, size = 20): Observable<PageResult<EmployeeDetails>> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    return this.http.get<PageResult<EmployeeDetails>>(this.apiUrl, { params });
   }
 
   getEmployeeById(id: string): Observable<EmployeeDetails> {
@@ -28,13 +33,10 @@ export class EmployeeService {
     return this.http.post<CreateEmployeeResponse>(this.apiUrl, payload);
   }
 
-  updatePersonalInformation(
+  updateEmployee(
     id: string,
-    payload: UpdatePersonalInformationRequest
-  ): Observable<UpdatePersonalInformationResponse> {
-    return this.http.put<UpdatePersonalInformationResponse>(
-      `${this.apiUrl}/${id}/personal-information`,
-      payload
-    );
+    payload: UpdateEmployeeRequest
+  ): Observable<UpdateEmployeeResponse> {
+    return this.http.put<UpdateEmployeeResponse>(`${this.apiUrl}/${id}`, payload);
   }
 }

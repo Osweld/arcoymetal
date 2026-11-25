@@ -1,19 +1,15 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { EmployeeService } from '../../services/employee.service';
-import {
-  CONTRACT_TYPE_LABELS,
-  EMPLOYEE_STATUS_LABELS,
-  EmployeeDetails,
-  EmployeeStatus,
-  PENSION_FUND_LABELS,
-} from '../../models/employee.model';
+import { EmployeeDetails, PENSION_FUND_LABELS } from '../../models/employee.model';
+import { PageResult } from '../../../../shared/models/pagination.model';
+import { extractApiErrorMessage } from '../../../../shared/models/api-error.model';
 
 @Component({
   selector: 'app-employee-list',
-  imports: [RouterLink, FormsModule, CurrencyPipe],
+  imports: [RouterLink, FormsModule, DatePipe],
   template: `
     <div class="space-y-6">
       <!-- Page Header -->
@@ -21,14 +17,14 @@ import {
         <div>
           <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Directorio de Empleados</h2>
           <p class="text-sm text-slate-500">
-            Gestión de expedientes personales, contractuales e identificación laboral (<code class="font-mono text-xs">/api/v1/employees</code>)
+            Consulta paginada de expedientes (<code class="font-mono text-xs">GET /api/v1/employees?page={{ currentPage() }}&amp;size={{ pageSize() }}</code>)
           </p>
         </div>
 
         <div class="flex items-center gap-2.5">
           <button
             type="button"
-            (click)="loadEmployees()"
+            (click)="loadPage(currentPage())"
             class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
           >
             <svg class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -59,7 +55,7 @@ import {
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div class="sm:col-span-2">
             <label for="employee-search" class="block text-xs font-semibold text-slate-700 mb-1">
-              Buscar por nombre, correo, cargo o DUI
+              Filtrar página actual por nombre, correo o DUI
             </label>
             <input
               id="employee-search"
@@ -71,26 +67,25 @@ import {
               autocapitalize="off"
               spellcheck="false"
               enterkeyhint="search"
-              placeholder="Ej. Carlos Martínez, Soldador, 01234567-8..."
+              placeholder="Ej. Carlos Mendoza, 012345678..."
               class="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
             />
           </div>
 
           <div>
-            <label for="employee-status-filter" class="block text-xs font-semibold text-slate-700 mb-1">
-              Estado laboral
+            <label for="employee-page-size" class="block text-xs font-semibold text-slate-700 mb-1">
+              Registros por página
             </label>
             <select
-              id="employee-status-filter"
-              name="status"
-              [ngModel]="statusFilter()"
-              (ngModelChange)="statusFilter.set($event)"
+              id="employee-page-size"
+              name="size"
+              [ngModel]="pageSize()"
+              (ngModelChange)="onPageSizeChange(+$event)"
               class="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base sm:text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
             >
-              <option value="ALL">Todos los estados</option>
-              <option value="ACTIVE">Activos</option>
-              <option value="INACTIVE">Inactivos</option>
-              <option value="TERMINATED">Dados de baja</option>
+              <option [value]="10">10 por página</option>
+              <option [value]="20">20 por página</option>
+              <option [value]="50">50 por página</option>
             </select>
           </div>
         </div>
@@ -104,7 +99,7 @@ import {
           <span>{{ errorMessage() }}</span>
           <button
             type="button"
-            (click)="loadEmployees()"
+            (click)="loadPage(currentPage())"
             class="rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-900 hover:bg-rose-200 cursor-pointer"
           >
             Reintentar
@@ -122,10 +117,10 @@ import {
           <div class="p-12 text-center">
             <p class="text-base font-semibold text-slate-800">No se encontraron empleados</p>
             <p class="mt-1 text-xs text-slate-500">
-              @if (employees().length === 0) {
+              @if (pageResult().content.length === 0) {
                 Aún no existen registros en la tabla <code class="font-mono">employee</code>.
               } @else {
-                Prueba ajustando los filtros de búsqueda o estado.
+                Prueba ajustando el texto de búsqueda en la página actual.
               }
             </p>
             <a
@@ -144,28 +139,26 @@ import {
           >
             <table
               style="
-                --label-2: 'Cargo y Contrato';
-                --label-3: 'DUI / AFP';
-                --label-4: 'Salario Base';
-                --label-5: 'Estado';
-                --label-6: 'Acciones';
+                --label-2: 'DUI / Identificación';
+                --label-3: 'AFP / Previsión';
+                --label-4: 'Fecha de Registro';
+                --label-5: 'Acciones';
               "
             >
               <caption id="employee-table-caption" class="visually-hidden">
-                Directorio actual de empleados de Arco &amp; Metal Mecánica
+                Directorio paginado de empleados de Arco &amp; Metal Mecánica
               </caption>
               <thead class="bg-slate-100 text-left text-xs font-bold uppercase tracking-wider text-slate-600">
                 <tr>
                   <th scope="col" class="px-5 py-3.5 border-b border-slate-200">Empleado</th>
-                  <th scope="col" class="px-5 py-3.5 border-b border-slate-200">Cargo y Contrato</th>
-                  <th scope="col" class="px-5 py-3.5 border-b border-slate-200">DUI / AFP</th>
-                  <th scope="col" class="px-5 py-3.5 border-b border-slate-200">Salario Base</th>
-                  <th scope="col" class="px-5 py-3.5 border-b border-slate-200">Estado</th>
+                  <th scope="col" class="px-5 py-3.5 border-b border-slate-200">DUI / Identificación</th>
+                  <th scope="col" class="px-5 py-3.5 border-b border-slate-200">AFP / Previsión</th>
+                  <th scope="col" class="px-5 py-3.5 border-b border-slate-200">Fecha de Registro</th>
                   <th scope="col" class="px-5 py-3.5 border-b border-slate-200 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-200 text-sm">
-                @for (emp of filteredEmployees(); track emp.id) {
+                @for (emp of filteredEmployees(); track emp.employeeId) {
                   <tr class="hover:bg-slate-50/80 transition-colors">
                     <th scope="row" class="px-5 py-4 text-left font-normal">
                       <div class="font-bold text-slate-900">
@@ -176,48 +169,37 @@ import {
                       </div>
                     </th>
                     <td class="px-5 py-4">
-                      <div class="font-medium text-slate-800">{{ emp.jobTitle }}</div>
-                      <div class="text-xs text-slate-500">
-                        {{ contractLabels[emp.contractType] }}
-                      </div>
-                    </td>
-                    <td class="px-5 py-4">
                       <div class="font-mono text-xs font-semibold text-slate-800">
                         DUI: {{ emp.dui }}
                       </div>
-                      <div class="text-xs text-slate-500">
-                        {{ pensionLabels[emp.pensionFundInstitution] }}
-                      </div>
-                    </td>
-                    <td class="px-5 py-4 font-semibold text-slate-900">
-                      {{ emp.baseSalary | currency: 'USD' : 'symbol' : '1.2-2' }}
+                      @if (emp.nit) {
+                        <div class="font-mono text-[11px] text-slate-500">NIT: {{ emp.nit }}</div>
+                      }
                     </td>
                     <td class="px-5 py-4">
-                      <span
-                        class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                        [class.bg-emerald-100]="emp.status === 'ACTIVE'"
-                        [class.text-emerald-800]="emp.status === 'ACTIVE'"
-                        [class.bg-amber-100]="emp.status === 'INACTIVE'"
-                        [class.text-amber-800]="emp.status === 'INACTIVE'"
-                        [class.bg-rose-100]="emp.status === 'TERMINATED'"
-                        [class.text-rose-800]="emp.status === 'TERMINATED'"
-                      >
-                        {{ statusLabels[emp.status] }}
-                      </span>
+                      <div class="text-xs font-medium text-slate-800">
+                        {{ pensionLabels[emp.pensionFundInstitution] }}
+                      </div>
+                      @if (emp.isss) {
+                        <div class="font-mono text-[11px] text-slate-500">ISSS: {{ emp.isss }}</div>
+                      }
+                    </td>
+                    <td class="px-5 py-4 text-slate-600 text-xs">
+                      {{ emp.createdAt | date: 'mediumDate' }}
                     </td>
                     <td class="px-5 py-4 text-right">
                       <div class="inline-flex items-center gap-2">
                         <a
-                          [routerLink]="['/employees', emp.id]"
+                          [routerLink]="['/employees', emp.employeeId]"
                           class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                         >
-                          Ver / Editar
+                          Expediente
                         </a>
                         <a
                           [routerLink]="['/users/new']"
-                          [queryParams]="{ employeeId: emp.id }"
+                          [queryParams]="{ employeeId: emp.employeeId }"
                           class="rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
-                          title="Crear cuenta de acceso para este empleado"
+                          title="Crear cuenta de acceso opcional para este empleado"
                         >
                           + Usuario
                         </a>
@@ -228,6 +210,34 @@ import {
               </tbody>
             </table>
           </div>
+
+          <!-- Pagination Bar -->
+          <div class="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+            <div class="text-xs text-slate-600">
+              Página <span class="font-bold text-slate-900">{{ pageResult().page + 1 }}</span> de
+              <span class="font-bold text-slate-900">{{ pageResult().totalPages || 1 }}</span>
+              &bull; Total: <span class="font-bold text-slate-900">{{ pageResult().totalElements }}</span> empleados
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                [disabled]="pageResult().first"
+                (click)="loadPage(currentPage() - 1)"
+                class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer"
+              >
+                &larr; Anterior
+              </button>
+              <button
+                type="button"
+                [disabled]="pageResult().last"
+                (click)="loadPage(currentPage() + 1)"
+                class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer"
+              >
+                Siguiente &rarr;
+              </button>
+            </div>
+          </div>
         }
       </div>
     </div>
@@ -236,52 +246,65 @@ import {
 export class EmployeeListComponent implements OnInit {
   private readonly employeeService = inject(EmployeeService);
 
-  readonly employees = signal<EmployeeDetails[]>([]);
+  readonly currentPage = signal(0);
+  readonly pageSize = signal(20);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
-
   readonly searchTerm = signal('');
-  readonly statusFilter = signal<'ALL' | EmployeeStatus>('ALL');
 
-  readonly contractLabels = CONTRACT_TYPE_LABELS;
+  readonly pageResult = signal<PageResult<EmployeeDetails>>({
+    content: [],
+    page: 0,
+    size: 20,
+    totalElements: 0,
+    totalPages: 0,
+    first: true,
+    last: true,
+  });
+
   readonly pensionLabels = PENSION_FUND_LABELS;
-  readonly statusLabels = EMPLOYEE_STATUS_LABELS;
 
   readonly filteredEmployees = computed(() => {
     const query = this.searchTerm().trim().toLowerCase();
-    const status = this.statusFilter();
+    const list = this.pageResult().content;
+    if (!query) return list;
 
-    return this.employees().filter((emp) => {
-      const matchesStatus = status === 'ALL' || emp.status === status;
-      if (!matchesStatus) return false;
-      if (!query) return true;
-
+    return list.filter((emp) => {
       const fullName = `${emp.firstName} ${emp.lastName}`.toLowerCase();
       return (
         fullName.includes(query) ||
         emp.email.toLowerCase().includes(query) ||
-        emp.jobTitle.toLowerCase().includes(query) ||
         emp.dui.toLowerCase().includes(query)
       );
     });
   });
 
   ngOnInit(): void {
-    this.loadEmployees();
+    this.loadPage(0);
   }
 
-  loadEmployees(): void {
+  onPageSizeChange(newSize: number): void {
+    this.pageSize.set(newSize);
+    this.loadPage(0);
+  }
+
+  loadPage(page: number): void {
+    if (page < 0) return;
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.employeeService.getAllEmployees().subscribe({
-      next: (data) => {
-        this.employees.set(data);
+    this.employeeService.getEmployeesPage(page, this.pageSize()).subscribe({
+      next: (result) => {
+        this.currentPage.set(result.page);
+        this.pageResult.set(result);
         this.loading.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.errorMessage.set(
-          'No se pudo conectar con GET /api/v1/employees. Verifica que el backend Spring Boot esté en ejecución.'
+          extractApiErrorMessage(
+            err,
+            'No se pudo conectar con GET /api/v1/employees. Verifica que el backend Spring Boot esté en ejecución.'
+          )
         );
         this.loading.set(false);
       },
