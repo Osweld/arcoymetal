@@ -135,4 +135,39 @@ class UserTest {
         assertThatThrownBy(() -> user.updateAccount(VALID_EMAIL, Set.of(), UserStatus.ACTIVE))
                 .isInstanceOf(UserMustHaveAtLeastOneRoleException.class);
     }
+
+    @Test
+    void shouldLockAccountAfterMaxFailedAttemptsAndResetOnSuccessOrUnlock() {
+        User user = User.create(
+                UserId.generate(),
+                EmployeeId.generate(),
+                VALID_HASH,
+                VALID_EMAIL,
+                Set.of(Role.MANAGER)
+        );
+
+        user.recordFailedLoginAttempt(5);
+        user.recordFailedLoginAttempt(5);
+        assertThat(user.getFailedLoginAttempts()).isEqualTo(2);
+        assertThat(user.getUserStatus()).isEqualTo(UserStatus.ACTIVE);
+
+        user.recordSuccessfulLogin();
+        assertThat(user.getFailedLoginAttempts()).isZero();
+
+        for (int i = 0; i < 5; i++) {
+            user.recordFailedLoginAttempt(5);
+        }
+        assertThat(user.getFailedLoginAttempts()).isEqualTo(5);
+        assertThat(user.getUserStatus()).isEqualTo(UserStatus.LOCKED);
+        assertThat(user.getTokenVersion()).isEqualTo(1L);
+
+        // Unlocking resets failedLoginAttempts
+        user.updateAccount(VALID_EMAIL, Set.of(Role.MANAGER), UserStatus.ACTIVE);
+        assertThat(user.getUserStatus()).isEqualTo(UserStatus.ACTIVE);
+        assertThat(user.getFailedLoginAttempts()).isZero();
+
+        // Revoking sessions increments tokenVersion
+        user.revokeSessions();
+        assertThat(user.getTokenVersion()).isEqualTo(2L);
+    }
 }

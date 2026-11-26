@@ -1,11 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../../core/auth/services/auth.service';
+import { extractApiErrorMessage } from '../../../../shared/models/api-error.model';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule],
   template: `
     <div class="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div class="sm:mx-auto sm:w-full sm:max-w-md px-4">
@@ -30,6 +31,16 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
 
       <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
         <div class="rounded-2xl bg-slate-900 border border-slate-800 py-8 px-6 shadow-xl sm:px-10">
+          @if (authError()) {
+            <div
+              role="alert"
+              aria-live="assertive"
+              class="mb-6 rounded-xl border border-rose-500/40 bg-rose-950/60 p-3.5 text-xs font-medium text-rose-200"
+            >
+              {{ authError() }}
+            </div>
+          }
+
           <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" method="POST" novalidate class="space-y-6">
             <div>
               <label for="login-email" class="block text-sm font-semibold text-slate-200 mb-1.5">
@@ -44,6 +55,7 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
                 autocorrect="off"
                 autocapitalize="off"
                 spellcheck="false"
+                placeholder="usuario@arcoymetal.com.sv"
                 required
                 (blur)="markTouched('email')"
                 [attr.aria-describedby]="showError('email') ? 'login-email-error' : null"
@@ -67,7 +79,7 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
                   [attr.aria-pressed]="showPassword()"
                   aria-label="Mostrar u ocultar contraseña"
                   aria-describedby="login-toggle-warning"
-                  class="text-xs font-semibold text-amber-400 hover:text-amber-300"
+                  class="text-xs font-semibold text-amber-400 hover:text-amber-300 cursor-pointer"
                 >
                   {{ showPassword() ? 'Ocultar' : 'Mostrar' }}
                 </button>
@@ -81,7 +93,6 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
                 [type]="showPassword() ? 'text' : 'password'"
                 formControlName="password"
                 autocomplete="current-password"
-                minlength="8"
                 required
                 (blur)="markTouched('password')"
                 [attr.aria-describedby]="showError('password') ? 'login-password-error' : null"
@@ -89,32 +100,18 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
               />
               @if (showError('password')) {
                 <p id="login-password-error" role="alert" class="mt-1.5 text-xs font-medium text-rose-400">
-                  La contraseña debe tener al menos 8 caracteres.
+                  Ingresa tu contraseña.
                 </p>
               }
             </div>
 
-            <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 text-xs text-slate-400 leading-relaxed">
-              <strong class="text-amber-400 font-semibold">Nota de integración JWT:</strong>
-              Esta vista e interceptor (<code class="font-mono text-slate-300">authInterceptor</code>) están listos para consumir el endpoint <code class="font-mono text-slate-300">POST /api/v1/auth/login</code> y la cookie <code class="font-mono text-slate-300">HttpOnly</code> de Refresh Token.
-            </div>
-
-            <div class="space-y-3">
-              <button
-                type="submit"
-                [disabled]="isSubmitting()"
-                class="flex w-full justify-center rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-slate-950 shadow-sm hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:opacity-60 transition-colors cursor-pointer"
-              >
-                {{ isSubmitting() ? 'Verificando credenciales...' : 'Iniciar sesión en el sistema' }}
-              </button>
-
-              <a
-                routerLink="/dashboard"
-                class="flex w-full justify-center rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-              >
-                Volver al Panel General
-              </a>
-            </div>
+            <button
+              type="submit"
+              [disabled]="isSubmitting()"
+              class="flex w-full justify-center rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-slate-950 shadow-sm hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 disabled:opacity-60 transition-colors cursor-pointer"
+            >
+              {{ isSubmitting() ? 'Verificando credenciales...' : 'Iniciar sesión en el sistema' }}
+            </button>
           </form>
         </div>
       </div>
@@ -129,10 +126,11 @@ export class LoginComponent {
   readonly showPassword = signal(false);
   readonly isSubmitting = signal(false);
   readonly submitAttempted = signal(false);
+  readonly authError = signal<string | null>(null);
 
   readonly loginForm = this.fb.nonNullable.group({
-    email: ['admin@arcoymetal.com.sv', [Validators.required, Validators.email]],
-    password: ['Admin1234!', [Validators.required, Validators.minLength(8)]],
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required]],
   });
 
   togglePasswordVisibility(): void {
@@ -150,6 +148,8 @@ export class LoginComponent {
 
   onSubmit(): void {
     this.submitAttempted.set(true);
+    this.authError.set(null);
+
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
@@ -157,13 +157,16 @@ export class LoginComponent {
 
     this.isSubmitting.set(true);
     const { email, password } = this.loginForm.getRawValue();
-    this.authService.login({ email, password }).subscribe({
+    this.authService.login({ email: email.trim(), password }).subscribe({
       next: () => {
         this.isSubmitting.set(false);
         this.router.navigate(['/dashboard']);
       },
-      error: () => {
+      error: (err) => {
         this.isSubmitting.set(false);
+        this.authError.set(
+          extractApiErrorMessage(err, 'No se pudo iniciar sesión. Verifica tus credenciales.')
+        );
       },
     });
   }

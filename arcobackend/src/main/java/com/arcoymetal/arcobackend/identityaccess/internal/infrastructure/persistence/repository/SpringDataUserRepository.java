@@ -20,6 +20,8 @@ public interface SpringDataUserRepository extends JpaRepository<UserEntity, UUID
 
     boolean existsByEmployeeId(UUID employeeId);
 
+    Optional<UserEntity> findByEmail(String email);
+
     Optional<UserEntity> findByEmployeeId(UUID employeeId);
 
     @Query("SELECT u.employeeId FROM UserEntity u")

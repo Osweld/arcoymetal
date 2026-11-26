@@ -1,5 +1,6 @@
 package com.arcoymetal.arcobackend.identityaccess.internal.infrastructure.persistence.adapter;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Repository;
@@ -31,7 +32,10 @@ public class UserPersistenceAdapter implements UserRepository {
                                     user.getEmail().value(),
                                     user.getPasswordHash().value(),
                                     user.getRoles(),
-                                    user.getUserStatus()
+                                    user.getUserStatus(),
+                                    user.isMustChangePassword(),
+                                    user.getTokenVersion(),
+                                    user.getFailedLoginAttempts()
                             );
                             springDataUserRepository.save(existing);
                         },
@@ -44,6 +48,16 @@ public class UserPersistenceAdapter implements UserRepository {
         UserEntity entity = springDataUserRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
         return userPersistenceMapper.toDomain(entity);
+    }
+
+    @Override
+    public Optional<User> findOptionalById(UUID userId) {
+        return springDataUserRepository.findById(userId).map(userPersistenceMapper::toDomain);
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return springDataUserRepository.findByEmail(email).map(userPersistenceMapper::toDomain);
     }
 
     @Override

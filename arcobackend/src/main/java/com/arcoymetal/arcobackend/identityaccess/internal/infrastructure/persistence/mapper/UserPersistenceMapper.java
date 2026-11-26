@@ -21,7 +21,10 @@ public class UserPersistenceMapper {
                 user.getPasswordHash().value(),
                 user.getEmail().value(),
                 new HashSet<>(user.getRoles()),
-                user.getUserStatus()
+                user.getUserStatus(),
+                user.isMustChangePassword(),
+                user.getTokenVersion(),
+                user.getFailedLoginAttempts()
         );
     }
 
@@ -32,7 +35,10 @@ public class UserPersistenceMapper {
                 new PasswordHash(entity.getPasswordHash()),
                 new Email(entity.getEmail()),
                 entity.getRoles(),
-                entity.getStatus()
+                entity.getStatus(),
+                entity.isMustChangePassword(),
+                entity.getTokenVersion(),
+                entity.getFailedLoginAttempts()
         );
     }
 }

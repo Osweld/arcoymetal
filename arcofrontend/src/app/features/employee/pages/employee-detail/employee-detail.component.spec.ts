@@ -7,6 +7,7 @@ import { EmployeeService } from '../../services/employee.service';
 import { EmploymentPeriodService } from '../../services/employment-period.service';
 import { LocationService } from '../../services/location.service';
 import { UserService } from '../../../identity-access/services/user.service';
+import { AuthService } from '../../../../core/auth/services/auth.service';
 import { EmployeeDetails, EmploymentPeriodDetails } from '../../models/employee.model';
 
 describe('EmployeeDetailComponent', () => {
@@ -104,6 +105,12 @@ describe('EmployeeDetailComponent', () => {
             registerChange,
             removeChange,
             terminatePeriod,
+          },
+        },
+        {
+          provide: AuthService,
+          useValue: {
+            isAdmin: () => true,
           },
         },
         {
@@ -238,6 +245,12 @@ describe('EmployeeDetailComponent', () => {
             registerChange: vi.fn(),
             removeChange: vi.fn(),
             terminatePeriod: vi.fn(),
+          },
+        },
+        {
+          provide: AuthService,
+          useValue: {
+            isAdmin: () => false,
           },
         },
         {

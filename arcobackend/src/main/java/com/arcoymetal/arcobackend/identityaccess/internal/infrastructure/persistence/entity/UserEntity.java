@@ -53,11 +53,31 @@ public class UserEntity extends AuditableEntity {
     @Column(name = "status", nullable = false, length = 30)
     private UserStatus status;
 
-    public void updateFrom(String email, String passwordHash, Set<Role> roles, UserStatus status) {
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword;
+
+    @Column(name = "token_version", nullable = false)
+    private long tokenVersion;
+
+    @Column(name = "failed_login_attempts", nullable = false)
+    private int failedLoginAttempts;
+
+    public void updateFrom(
+            String email,
+            String passwordHash,
+            Set<Role> roles,
+            UserStatus status,
+            boolean mustChangePassword,
+            long tokenVersion,
+            int failedLoginAttempts
+    ) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.roles.clear();
         this.roles.addAll(roles);
         this.status = status;
+        this.mustChangePassword = mustChangePassword;
+        this.tokenVersion = tokenVersion;
+        this.failedLoginAttempts = failedLoginAttempts;
     }
 }

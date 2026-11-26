@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 import { EmployeeService } from '../../services/employee.service';
 import { UserService } from '../../../identity-access/services/user.service';
+import { AuthService } from '../../../../core/auth/services/auth.service';
 import {
   EMPLOYEE_EMPLOYMENT_FILTER_LABELS,
   EmployeeDetails,
@@ -258,22 +259,24 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                         >
                           Expediente
                         </a>
-                        @if (linkedEmployeeIds().has(emp.employeeId)) {
-                          <span
-                            class="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-800"
-                            title="Este empleado ya cuenta con una cuenta de acceso al sistema"
-                          >
-                            Con usuario
-                          </span>
-                        } @else {
-                          <a
-                            [routerLink]="['/users/new']"
-                            [queryParams]="{ employeeId: emp.employeeId }"
-                            class="rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
-                            title="Crear cuenta de acceso opcional para este empleado"
-                          >
-                            + Usuario
-                          </a>
+                        @if (authService.isAdmin()) {
+                          @if (linkedEmployeeIds().has(emp.employeeId)) {
+                            <span
+                              class="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-800"
+                              title="Este empleado ya cuenta con una cuenta de acceso al sistema"
+                            >
+                              Con usuario
+                            </span>
+                          } @else {
+                            <a
+                              [routerLink]="['/users/new']"
+                              [queryParams]="{ employeeId: emp.employeeId }"
+                              class="rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
+                              title="Crear cuenta de acceso opcional para este empleado"
+                            >
+                              + Usuario
+                            </a>
+                          }
                         }
                       </div>
                     </td>
@@ -318,6 +321,7 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
 export class EmployeeListComponent implements OnInit {
   private readonly employeeService = inject(EmployeeService);
   private readonly userService = inject(UserService);
+  readonly authService = inject(AuthService);
 
   readonly currentPage = signal(0);
   readonly pageSize = signal(20);
@@ -374,7 +378,9 @@ export class EmployeeListComponent implements OnInit {
         search: this.searchTerm(),
         employmentStatus: this.statusFilter(),
       }),
-      linkedIds: this.userService.getLinkedEmployeeIds().pipe(catchError(() => of([] as string[]))),
+      linkedIds: this.authService.isAdmin()
+        ? this.userService.getLinkedEmployeeIds().pipe(catchError(() => of([] as string[])))
+        : of([] as string[]),
     }).subscribe({
       next: ({ pageResult, linkedIds }) => {
         this.currentPage.set(pageResult.page);

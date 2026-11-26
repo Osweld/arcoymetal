@@ -10,8 +10,11 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.DuplicateUserException;
+import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.InvalidCredentialsException;
+import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.InvalidRefreshTokenException;
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.LastAdministratorCannotBeModifiedException;
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.ReferencedEmployeeNotFoundException;
+import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.UserAccountInactiveException;
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.UserAlreadyHasRoleException;
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.UserDoesNotHaveRoleException;
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.UserMustHaveAtLeastOneRoleException;
@@ -57,5 +60,27 @@ public class IdentityAccessExceptionHandler {
                 null
         );
         return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler({ InvalidCredentialsException.class, InvalidRefreshTokenException.class })
+    public ResponseEntity<ApiErrorResponse> handleUnauthorized(RuntimeException exception) {
+        ApiErrorResponse response = new ApiErrorResponse(
+                Instant.now(),
+                HttpStatus.UNAUTHORIZED.value(),
+                exception.getMessage(),
+                null
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
+    @ExceptionHandler(UserAccountInactiveException.class)
+    public ResponseEntity<ApiErrorResponse> handleForbidden(RuntimeException exception) {
+        ApiErrorResponse response = new ApiErrorResponse(
+                Instant.now(),
+                HttpStatus.FORBIDDEN.value(),
+                exception.getMessage(),
+                null
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 }

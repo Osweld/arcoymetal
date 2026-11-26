@@ -7,15 +7,28 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import com.arcoymetal.arcobackend.shared.infrastructure.security.AuthenticatedUserPrincipal;
 
 @Configuration
-@EnableJpaAuditing 
+@EnableJpaAuditing
 public class JpaAuditingConfig {
 
     @Bean
     public AuditorAware<UUID> auditorProvider() {
-        // TODO: Implement the actual logic to retrieve the current user ID
-        return Optional::empty;
+        return () -> {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return Optional.empty();
+            }
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof AuthenticatedUserPrincipal userPrincipal) {
+                return Optional.of(userPrincipal.userId());
+            }
+            return Optional.empty();
+        };
     }
 
 }

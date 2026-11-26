@@ -23,9 +23,21 @@ public class User {
     private Email email;
     private final Set<Role> roles;
     private UserStatus userStatus;
+    private boolean mustChangePassword;
+    private long tokenVersion;
+    private int failedLoginAttempts;
 
-    private User(UserId userId, EmployeeId employeeId, PasswordHash passwordHash, Email email, Set<Role> roles,
-            UserStatus userStatus) {
+    private User(
+            UserId userId,
+            EmployeeId employeeId,
+            PasswordHash passwordHash,
+            Email email,
+            Set<Role> roles,
+            UserStatus userStatus,
+            boolean mustChangePassword,
+            long tokenVersion,
+            int failedLoginAttempts
+    ) {
         this.userId = Objects.requireNonNull(userId, "UserId cannot be null");
         this.employeeId = Objects.requireNonNull(employeeId, "EmployeeId cannot be null");
         this.passwordHash = Objects.requireNonNull(passwordHash, "PasswordHash cannot be null");
@@ -40,16 +52,49 @@ public class User {
         }
         this.roles = copiedRoles;
         this.userStatus = Objects.requireNonNull(userStatus, "UserStatus cannot be null");
+        if (tokenVersion < 0) {
+            throw new IllegalArgumentException("TokenVersion cannot be negative");
+        }
+        if (failedLoginAttempts < 0) {
+            throw new IllegalArgumentException("FailedLoginAttempts cannot be negative");
+        }
+        this.mustChangePassword = mustChangePassword;
+        this.tokenVersion = tokenVersion;
+        this.failedLoginAttempts = failedLoginAttempts;
     }
 
     public static User create(UserId userId, EmployeeId employeeId, PasswordHash passwordHash, Email email,
             Set<Role> roles) {
-        return new User(userId, employeeId, passwordHash, email, roles, UserStatus.ACTIVE);
+        return new User(userId, employeeId, passwordHash, email, roles, UserStatus.ACTIVE, false, 0L, 0);
     }
 
     public static User reconstitute(UserId userId, EmployeeId employeeId, PasswordHash passwordHash, Email email,
             Set<Role> roles, UserStatus userStatus) {
-        return new User(userId, employeeId, passwordHash, email, roles, userStatus);
+        return new User(userId, employeeId, passwordHash, email, roles, userStatus, false, 0L, 0);
+    }
+
+    public static User reconstitute(
+            UserId userId,
+            EmployeeId employeeId,
+            PasswordHash passwordHash,
+            Email email,
+            Set<Role> roles,
+            UserStatus userStatus,
+            boolean mustChangePassword,
+            long tokenVersion,
+            int failedLoginAttempts
+    ) {
+        return new User(
+                userId,
+                employeeId,
+                passwordHash,
+                email,
+                roles,
+                userStatus,
+                mustChangePassword,
+                tokenVersion,
+                failedLoginAttempts
+        );
     }
 
     public void assignRole(Role role) {
@@ -58,6 +103,7 @@ public class User {
         if (!this.roles.add(role)) {
             throw new UserAlreadyHasRoleException(role.toString());
         }
+        this.tokenVersion++;
     }
 
     public void removeRole(Role role) {
@@ -72,6 +118,7 @@ public class User {
         }
 
         this.roles.remove(role);
+        this.tokenVersion++;
     }
 
     public void updateAccount(Email newEmail, Set<Role> newRoles, UserStatus newStatus) {
@@ -88,10 +135,40 @@ public class User {
             validatedRoles.add(Objects.requireNonNull(role, "Role cannot be null"));
         }
 
+        boolean rolesChanged = !this.roles.equals(validatedRoles);
+        boolean becomingInactive = newStatus != UserStatus.ACTIVE && this.userStatus != newStatus;
+
         this.email = newEmail;
         this.roles.clear();
         this.roles.addAll(validatedRoles);
         this.userStatus = newStatus;
+
+        if (rolesChanged || becomingInactive) {
+            this.tokenVersion++;
+        }
+
+        if (newStatus == UserStatus.ACTIVE) {
+            this.failedLoginAttempts = 0;
+        }
+    }
+
+    public void recordFailedLoginAttempt(int maxFailedAttempts) {
+        if (maxFailedAttempts < 1) {
+            throw new IllegalArgumentException("Max failed attempts must be at least 1");
+        }
+        this.failedLoginAttempts++;
+        if (this.failedLoginAttempts >= maxFailedAttempts) {
+            this.userStatus = UserStatus.LOCKED;
+            this.tokenVersion++;
+        }
+    }
+
+    public void recordSuccessfulLogin() {
+        this.failedLoginAttempts = 0;
+    }
+
+    public void revokeSessions() {
+        this.tokenVersion++;
     }
 
     public boolean isActiveAdministrator() {
@@ -120,5 +197,17 @@ public class User {
 
     public UserStatus getUserStatus() {
         return userStatus;
+    }
+
+    public boolean isMustChangePassword() {
+        return mustChangePassword;
+    }
+
+    public long getTokenVersion() {
+        return tokenVersion;
+    }
+
+    public int getFailedLoginAttempts() {
+        return failedLoginAttempts;
     }
 }

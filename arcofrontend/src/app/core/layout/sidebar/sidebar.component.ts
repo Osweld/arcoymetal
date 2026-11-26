@@ -1,11 +1,13 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from '../../auth/services/auth.service';
 
 export interface NavItem {
   label: string;
   route: string;
   badge?: string;
   section: 'core' | 'upcoming';
+  adminOnly?: boolean;
   iconPath: string;
 }
 
@@ -47,7 +49,7 @@ export interface NavItem {
             Módulos Activos
           </p>
           <ul class="space-y-1">
-            @for (item of coreItems; track item.route) {
+            @for (item of visibleCoreItems(); track item.route) {
               <li>
                 <a
                   [routerLink]="item.route"
@@ -138,8 +140,14 @@ export interface NavItem {
   `,
 })
 export class SidebarComponent {
+  private readonly authService = inject(AuthService);
+
   readonly mobileOpen = input<boolean>(false);
   readonly navigate = output<void>();
+
+  readonly visibleCoreItems = computed(() =>
+    this.coreItems.filter((item) => !item.adminOnly || this.authService.isAdmin())
+  );
 
   readonly coreItems: NavItem[] = [
     {
@@ -162,6 +170,7 @@ export class SidebarComponent {
       route: '/users',
       badge: 'RBAC',
       section: 'core',
+      adminOnly: true,
       iconPath:
         'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z',
     },

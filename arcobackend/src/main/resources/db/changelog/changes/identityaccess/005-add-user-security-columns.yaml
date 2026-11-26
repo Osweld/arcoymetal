@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-add-user-security-columns
+      author: arcoymetal
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: must_change_password
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: token_version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: failed_login_attempts
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false

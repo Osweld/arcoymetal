@@ -37,3 +37,6 @@ databaseChangeLog:
   - include:
       file: changes/identityaccess/004-add-user-audit-actor-columns.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/identityaccess/005-add-user-security-columns.yaml
+      relativeToChangelogFile: true

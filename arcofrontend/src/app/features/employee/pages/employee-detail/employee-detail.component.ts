@@ -15,6 +15,7 @@ import { EmploymentPeriodService } from '../../services/employment-period.servic
 import { LocationService } from '../../services/location.service';
 import { UserService } from '../../../identity-access/services/user.service';
 import { UserSummary } from '../../../identity-access/models/user.model';
+import { AuthService } from '../../../../core/auth/services/auth.service';
 import {
   CONTRACT_TYPE_LABELS,
   ContractType,
@@ -95,21 +96,23 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
               </button>
             }
 
-            @if (linkedUser(); as user) {
-              <span
-                class="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800"
-                title="Este empleado ya cuenta con una cuenta de acceso al sistema"
-              >
-                Cuenta: {{ user.email }}
-              </span>
-            } @else {
-              <a
-                [routerLink]="['/users/new']"
-                [queryParams]="{ employeeId: emp.employeeId }"
-                class="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400"
-              >
-                + Usuario
-              </a>
+            @if (authService.isAdmin()) {
+              @if (linkedUser(); as user) {
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800"
+                  title="Este empleado ya cuenta con una cuenta de acceso al sistema"
+                >
+                  Cuenta: {{ user.email }}
+                </span>
+              } @else {
+                <a
+                  [routerLink]="['/users/new']"
+                  [queryParams]="{ employeeId: emp.employeeId }"
+                  class="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400"
+                >
+                  + Usuario
+                </a>
+              }
             }
           </div>
         }
@@ -1128,6 +1131,7 @@ export class EmployeeDetailComponent implements OnInit {
   private readonly employmentPeriodService = inject(EmploymentPeriodService);
   private readonly locationService = inject(LocationService);
   private readonly userService = inject(UserService);
+  readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
 
   employeeId = '';
@@ -1270,9 +1274,9 @@ export class EmployeeDetailComponent implements OnInit {
       employee: this.employeeService.getEmployeeById(this.employeeId),
       hierarchy: this.locationService.getHierarchy(),
       history: this.employmentPeriodService.getEmployeeHistory(this.employeeId),
-      linkedUser: this.userService
-        .getUserByEmployeeId(this.employeeId)
-        .pipe(catchError(() => of(null))),
+      linkedUser: this.authService.isAdmin()
+        ? this.userService.getUserByEmployeeId(this.employeeId).pipe(catchError(() => of(null)))
+        : of(null),
     }).subscribe({
       next: ({ employee, hierarchy, history, linkedUser }) => {
         this.employee.set(employee);

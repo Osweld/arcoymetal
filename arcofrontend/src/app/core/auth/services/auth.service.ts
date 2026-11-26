@@ -1,15 +1,24 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, of, tap } from 'rxjs';
-import { Role } from '../../../features/identity-access/models/user.model';
+import {
+  Observable,
+  catchError,
+  finalize,
+  firstValueFrom,
+  of,
+  shareReplay,
+  tap,
+} from 'rxjs';
+import { Role, UserStatus } from '../../../features/identity-access/models/user.model';
 
 export interface AuthenticatedUser {
   id: string;
-  employeeId?: string;
-  fullName: string;
+  employeeId: string;
   email: string;
   roles: Role[];
+  status: UserStatus;
+  mustChangePassword: boolean;
 }
 
 export interface LoginCredentials {
@@ -17,13 +26,11 @@ export interface LoginCredentials {
   password: string;
 }
 
-export interface AuthTokenResponse {
+export interface AuthSessionResponse {
   accessToken: string;
+  expiresInSeconds: number;
   user: AuthenticatedUser;
 }
-
-const STORAGE_USER_KEY = 'arco_auth_user';
-const STORAGE_TOKEN_KEY = 'arco_access_token';
 
 @Injectable({
   providedIn: 'root',
@@ -31,58 +38,92 @@ const STORAGE_TOKEN_KEY = 'arco_access_token';
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly authUrl = '/api/v1/auth';
 
-  private readonly _accessToken = signal<string | null>(this.loadStoredToken());
-  private readonly _currentUser = signal<AuthenticatedUser | null>(this.loadStoredUser());
+  private readonly _accessToken = signal<string | null>(null);
+  private readonly _currentUser = signal<AuthenticatedUser | null>(null);
+  private refreshInProgress$: Observable<AuthSessionResponse> | null = null;
 
   readonly accessToken = this._accessToken.asReadonly();
   readonly currentUser = this._currentUser.asReadonly();
-  readonly isAuthenticated = computed(() => this._currentUser() !== null);
-
-  constructor() {
-    // Mientras el endpoint /api/v1/auth/login está pendiente en el backend,
-    // inicializamos una sesión administrativa de desarrollo por defecto si no existe.
-    if (!this._currentUser()) {
-      const defaultDevUser: AuthenticatedUser = {
-        id: '00000000-0000-0000-0000-000000000001',
-        fullName: 'Administrador General',
-        email: 'admin@arcoymetal.com.sv',
-        roles: ['ADMINISTRATOR'],
-      };
-      this._currentUser.set(defaultDevUser);
-    }
-  }
+  readonly isAuthenticated = computed(
+    () => this._currentUser() !== null && this._accessToken() !== null
+  );
+  readonly isAdmin = computed(() => this.hasRole('ADMINISTRATOR'));
 
   /**
-   * Inicia sesión. Preparado para conectar con POST /api/v1/auth/login cuando
-   * el módulo JWT esté activo en Spring Security.
+   * Restaura silenciosamente la sesión desde la cookie HttpOnly al iniciar/recargar la app.
+   * Si no existe cookie o responde 401, limpia el estado sin propagar error para que
+   * authGuard redirija limpiamente a /login.
    */
-  login(credentials: LoginCredentials): Observable<AuthTokenResponse> {
-    const simulatedResponse: AuthTokenResponse = {
-      accessToken: 'dev-jwt-preview-token',
-      user: {
-        id: '00000000-0000-0000-0000-000000000001',
-        fullName: credentials.email.split('@')[0].replace('.', ' '),
-        email: credentials.email,
-        roles: ['ADMINISTRATOR'],
-      },
-    };
-
-    return of(simulatedResponse).pipe(
-      tap((response) => {
-        this._accessToken.set(response.accessToken);
-        this._currentUser.set(response.user);
-        sessionStorage.setItem(STORAGE_TOKEN_KEY, response.accessToken);
-        sessionStorage.setItem(STORAGE_USER_KEY, JSON.stringify(response.user));
-      })
+  async initializeSession(): Promise<void> {
+    await firstValueFrom(
+      this.refreshToken().pipe(
+        catchError(() => {
+          this.clearSessionState();
+          return of(null);
+        })
+      )
     );
   }
 
+  login(credentials: LoginCredentials): Observable<AuthSessionResponse> {
+    return this.http
+      .post<AuthSessionResponse>(`${this.authUrl}/login`, credentials, {
+        withCredentials: true,
+      })
+      .pipe(tap((session) => this.applySession(session)));
+  }
+
+  /**
+   * Renueva el Access Token en memoria usando la cookie HttpOnly.
+   * Serializa llamadas concurrentes (ej. múltiples 401 simultáneos) en una única petición HTTP.
+   */
+  refreshToken(): Observable<AuthSessionResponse> {
+    if (!this.refreshInProgress$) {
+      this.refreshInProgress$ = this.http
+        .post<AuthSessionResponse>(
+          `${this.authUrl}/refresh`,
+          {},
+          { withCredentials: true }
+        )
+        .pipe(
+          tap((session) => this.applySession(session)),
+          finalize(() => {
+            this.refreshInProgress$ = null;
+          }),
+          shareReplay(1)
+        );
+    }
+    return this.refreshInProgress$;
+  }
+
+  fetchMe(): Observable<AuthenticatedUser> {
+    return this.http
+      .get<AuthenticatedUser>(`${this.authUrl}/me`, { withCredentials: true })
+      .pipe(tap((user) => this._currentUser.set(user)));
+  }
+
   logout(): void {
+    this.http
+      .post<void>(`${this.authUrl}/logout`, {}, { withCredentials: true })
+      .pipe(
+        catchError(() => of(void 0)),
+        finalize(() => {
+          this.clearSessionState();
+          this.router.navigate(['/login']);
+        })
+      )
+      .subscribe();
+  }
+
+  clearSessionState(): void {
     this._accessToken.set(null);
     this._currentUser.set(null);
-    sessionStorage.removeItem(STORAGE_TOKEN_KEY);
-    sessionStorage.removeItem(STORAGE_USER_KEY);
+  }
+
+  clearSessionAndRedirectToLogin(): void {
+    this.clearSessionState();
     this.router.navigate(['/login']);
   }
 
@@ -90,19 +131,8 @@ export class AuthService {
     return this._currentUser()?.roles.includes(role) ?? false;
   }
 
-  private loadStoredToken(): string | null {
-    if (typeof sessionStorage === 'undefined') return null;
-    return sessionStorage.getItem(STORAGE_TOKEN_KEY);
-  }
-
-  private loadStoredUser(): AuthenticatedUser | null {
-    if (typeof sessionStorage === 'undefined') return null;
-    const raw = sessionStorage.getItem(STORAGE_USER_KEY);
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as AuthenticatedUser;
-    } catch {
-      return null;
-    }
+  private applySession(session: AuthSessionResponse): void {
+    this._accessToken.set(session.accessToken);
+    this._currentUser.set(session.user);
   }
 }

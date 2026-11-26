@@ -1,6 +1,7 @@
 package com.arcoymetal.arcobackend.employee;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -22,6 +23,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.web.servlet.MockMvc;
@@ -45,6 +47,7 @@ import tools.jackson.databind.ObjectMapper;
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
 @RecordApplicationEvents
+@WithMockUser(roles = "MANAGER")
 class EmployeeModuleIntegrationTest {
 
     private static final String VALID_DISTRICT_ID = "AH0101";
@@ -74,7 +77,9 @@ class EmployeeModuleIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        this.mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(springSecurity())
+                .build();
         jdbcTemplate.execute("DELETE FROM employment_change");
         jdbcTemplate.execute("DELETE FROM employment_period");
         jdbcTemplate.execute("DELETE FROM user_roles");
