@@ -120,4 +120,38 @@ describe('UserService', () => {
 
     expect(received).toEqual(mockUser);
   });
+
+  it('sends search and status query params to GET /api/v1/users', () => {
+    service.getUsers(0, 10, { search: ' admin ', status: 'DISABLED' }).subscribe();
+
+    const req = httpMock.expectOne('/api/v1/users?page=0&size=10&search=admin&status=DISABLED');
+    expect(req.request.method).toBe('GET');
+    req.flush({
+      content: [],
+      page: 0,
+      size: 10,
+      totalElements: 0,
+      totalPages: 0,
+      first: true,
+      last: true,
+    });
+  });
+
+  it('updates a user via PUT /api/v1/users/:id', () => {
+    const payload = {
+      email: 'updated@arcoymetal.com.sv',
+      roles: ['ADMINISTRATOR', 'MANAGER'] as ('ADMINISTRATOR' | 'MANAGER')[],
+      status: 'ACTIVE' as const,
+    };
+
+    let receivedId: string | undefined;
+    service.updateUser('u-1', payload).subscribe((res) => (receivedId = res.userId));
+
+    const req = httpMock.expectOne('/api/v1/users/u-1');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual(payload);
+    req.flush({ userId: 'u-1' });
+
+    expect(receivedId).toBe('u-1');
+  });
 });

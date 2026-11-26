@@ -107,5 +107,32 @@ class UserTest {
 
         assertThat(user.getUserStatus()).isEqualTo(UserStatus.LOCKED);
         assertThat(user.getRoles()).containsExactly(Role.MANAGER);
+        assertThat(user.isActiveAdministrator()).isFalse();
+    }
+
+    @Test
+    void shouldUpdateAccountEmailRolesAndStatusWhileValidatingInvariants() {
+        User user = User.create(
+                UserId.generate(),
+                EmployeeId.generate(),
+                VALID_HASH,
+                VALID_EMAIL,
+                Set.of(Role.ADMINISTRATOR)
+        );
+        assertThat(user.isActiveAdministrator()).isTrue();
+
+        user.updateAccount(
+                new Email("manager@arcoymetal.com.sv"),
+                Set.of(Role.MANAGER),
+                UserStatus.DISABLED
+        );
+
+        assertThat(user.getEmail().value()).isEqualTo("manager@arcoymetal.com.sv");
+        assertThat(user.getRoles()).containsExactly(Role.MANAGER);
+        assertThat(user.getUserStatus()).isEqualTo(UserStatus.DISABLED);
+        assertThat(user.isActiveAdministrator()).isFalse();
+
+        assertThatThrownBy(() -> user.updateAccount(VALID_EMAIL, Set.of(), UserStatus.ACTIVE))
+                .isInstanceOf(UserMustHaveAtLeastOneRoleException.class);
     }
 }

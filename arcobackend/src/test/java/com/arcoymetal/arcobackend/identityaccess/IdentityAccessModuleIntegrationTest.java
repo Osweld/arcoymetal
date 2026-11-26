@@ -3,6 +3,7 @@ package com.arcoymetal.arcobackend.identityaccess;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -204,6 +205,132 @@ class IdentityAccessModuleIntegrationTest {
         mockMvc.perform(get("/api/v1/users/{id}", UUID.randomUUID()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    void shouldUpdateUserProtectLastActiveAdministratorAndFilterUsersServerSide() throws Exception {
+        UUID emp1 = createEmployee("admin1.emp@arcoymetal.com.sv", "05111111-1");
+        UUID emp2 = createEmployee("admin2.emp@arcoymetal.com.sv", "05222222-2");
+
+        UUID admin1Id = extractUuid(
+                mockMvc.perform(post("/api/v1/users")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                          "password": "Password123!",
+                                          "email": "admin1@arcoymetal.com.sv",
+                                          "employeeId": "%s",
+                                          "roles": ["ADMINISTRATOR"]
+                                        }
+                                        """.formatted(emp1)))
+                        .andExpect(status().isCreated())
+                        .andReturn(),
+                "userId"
+        );
+
+        UUID managerId = extractUuid(
+                mockMvc.perform(post("/api/v1/users")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                          "password": "Password123!",
+                                          "email": "manager1@arcoymetal.com.sv",
+                                          "employeeId": "%s",
+                                          "roles": ["MANAGER"]
+                                        }
+                                        """.formatted(emp2)))
+                        .andExpect(status().isCreated())
+                        .andReturn(),
+                "userId"
+        );
+
+        // 1. Attempting to disable or demote the LAST active ADMINISTRATOR -> 409 Conflict
+        mockMvc.perform(put("/api/v1/users/{id}", admin1Id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "admin1@arcoymetal.com.sv",
+                                  "roles": ["ADMINISTRATOR"],
+                                  "status": "DISABLED"
+                                }
+                                """))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(put("/api/v1/users/{id}", admin1Id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "admin1@arcoymetal.com.sv",
+                                  "roles": ["MANAGER"],
+                                  "status": "ACTIVE"
+                                }
+                                """))
+                .andExpect(status().isConflict());
+
+        // 2. Duplicate email on update -> 409 Conflict
+        mockMvc.perform(put("/api/v1/users/{id}", managerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "admin1@arcoymetal.com.sv",
+                                  "roles": ["MANAGER"],
+                                  "status": "ACTIVE"
+                                }
+                                """))
+                .andExpect(status().isConflict());
+
+        // 3. Promote second user to ADMINISTRATOR -> 200 OK
+        mockMvc.perform(put("/api/v1/users/{id}", managerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "admin2.updated@arcoymetal.com.sv",
+                                  "roles": ["ADMINISTRATOR", "MANAGER"],
+                                  "status": "ACTIVE"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(managerId.toString()));
+
+        // 4. Now admin1 CAN be disabled because admin2 is an active ADMINISTRATOR -> 200 OK
+        mockMvc.perform(put("/api/v1/users/{id}", admin1Id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "admin1@arcoymetal.com.sv",
+                                  "roles": ["ADMINISTRATOR"],
+                                  "status": "DISABLED"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/users/{id}", admin1Id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("DISABLED"))
+                .andExpect(jsonPath("$.createdAt").isNotEmpty());
+
+        // 5. Server-side search and status filtering
+        mockMvc.perform(get("/api/v1/users").param("status", "DISABLED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(admin1Id.toString()));
+
+        mockMvc.perform(get("/api/v1/users").param("search", "admin2.updated"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(managerId.toString()));
+
+        // 6. Unknown userId on PUT -> 404 Not Found
+        mockMvc.perform(put("/api/v1/users/{id}", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "ghost@arcoymetal.com.sv",
+                                  "roles": ["MANAGER"],
+                                  "status": "ACTIVE"
+                                }
+                                """))
+                .andExpect(status().isNotFound());
     }
 
     private UUID createEmployee(String email, String dui) throws Exception {

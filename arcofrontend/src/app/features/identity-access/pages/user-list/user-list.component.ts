@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of } from 'rxjs';
 import { UserService } from '../../services/user.service';
@@ -8,6 +9,7 @@ import {
   PageResult,
   ROLE_LABELS,
   USER_STATUS_LABELS,
+  UserStatus,
   UserSummary,
 } from '../../models/user.model';
 import { EmployeeDetails } from '../../../employee/models/employee.model';
@@ -15,7 +17,7 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
 
 @Component({
   selector: 'app-user-list',
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, FormsModule, DatePipe],
   template: `
     <div class="space-y-6">
       <!-- Header -->
@@ -49,6 +51,71 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
           </a>
         </div>
       </div>
+
+      <!-- Filter Bar -->
+      <form
+        (ngSubmit)="applyFilters()"
+        method="GET"
+        action="/users"
+        class="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs"
+      >
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
+          <div class="sm:col-span-6">
+            <label for="user-search" class="block text-xs font-semibold text-slate-700 mb-1">
+              Buscar por correo de acceso
+            </label>
+            <input
+              id="user-search"
+              name="search"
+              type="search"
+              [ngModel]="searchTerm()"
+              (ngModelChange)="searchTerm.set($event)"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+              enterkeyhint="search"
+              placeholder="Ej. admin@arcoymetal.com.sv..."
+              class="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+            />
+          </div>
+
+          <div class="sm:col-span-3">
+            <label for="user-status-filter" class="block text-xs font-semibold text-slate-700 mb-1">
+              Estado de cuenta
+            </label>
+            <select
+              id="user-status-filter"
+              name="status"
+              [ngModel]="statusFilter()"
+              (ngModelChange)="onStatusFilterChange($event)"
+              class="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base sm:text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+            >
+              <option value="">Todos los estados</option>
+              <option value="ACTIVE">Activa</option>
+              <option value="DISABLED">Desactivada</option>
+              <option value="LOCKED">Bloqueada</option>
+            </select>
+          </div>
+
+          <div class="sm:col-span-3 flex items-end gap-2">
+            <button
+              type="submit"
+              class="flex-1 rounded-lg bg-slate-900 px-3.5 py-2.5 text-xs font-bold text-white hover:bg-slate-800 cursor-pointer"
+            >
+              Buscar
+            </button>
+            @if (searchTerm() || statusFilter()) {
+              <button
+                type="button"
+                (click)="clearFilters()"
+                class="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+              >
+                Limpiar
+              </button>
+            }
+          </div>
+        </div>
+      </form>
 
       @if (errorMessage()) {
         <div
@@ -98,6 +165,7 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                 --label-3: 'Roles Asignados';
                 --label-4: 'Estado';
                 --label-5: 'Fecha de Creación';
+                --label-6: 'Acciones';
               "
             >
               <caption id="users-table-caption" class="visually-hidden">
@@ -110,6 +178,7 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                   <th scope="col" class="px-5 py-3.5 border-b border-slate-200">Roles Asignados</th>
                   <th scope="col" class="px-5 py-3.5 border-b border-slate-200">Estado</th>
                   <th scope="col" class="px-5 py-3.5 border-b border-slate-200">Fecha de Creación</th>
+                  <th scope="col" class="px-5 py-3.5 border-b border-slate-200 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-200 text-sm">
@@ -161,8 +230,16 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                         {{ statusLabels[user.status] }}
                       </span>
                     </td>
-                    <td class="px-5 py-4 text-slate-600">
-                      {{ user.createdAt | date: 'medium' }}
+                    <td class="px-5 py-4 text-slate-600 text-xs">
+                      {{ user.createdAt | date: 'mediumDate' }}
+                    </td>
+                    <td class="px-5 py-4 text-right">
+                      <a
+                        [routerLink]="['/users', user.id]"
+                        class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                      >
+                        Gestionar
+                      </a>
                     </td>
                   </tr>
                 }
@@ -210,6 +287,8 @@ export class UserListComponent implements OnInit {
   readonly pageSize = signal(10);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly searchTerm = signal('');
+  readonly statusFilter = signal<UserStatus | ''>('');
 
   readonly employees = signal<EmployeeDetails[]>([]);
   readonly pageResult = signal<PageResult<UserSummary>>({
@@ -237,13 +316,31 @@ export class UserListComponent implements OnInit {
     this.loadPage(0);
   }
 
+  applyFilters(): void {
+    this.loadPage(0);
+  }
+
+  onStatusFilterChange(status: UserStatus | ''): void {
+    this.statusFilter.set(status);
+    this.loadPage(0);
+  }
+
+  clearFilters(): void {
+    this.searchTerm.set('');
+    this.statusFilter.set('');
+    this.loadPage(0);
+  }
+
   loadPage(page: number): void {
     if (page < 0) return;
     this.loading.set(true);
     this.errorMessage.set(null);
 
     forkJoin({
-      users: this.userService.getUsers(page, this.pageSize()),
+      users: this.userService.getUsers(page, this.pageSize(), {
+        search: this.searchTerm(),
+        status: this.statusFilter(),
+      }),
       employees: this.employeeService.getEmployeesPage(0, 100).pipe(
         map((res) => res.content),
         catchError(() => of([] as EmployeeDetails[]))

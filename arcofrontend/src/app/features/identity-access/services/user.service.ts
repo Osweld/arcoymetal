@@ -5,6 +5,9 @@ import {
   CreateUserRequest,
   CreateUserResponse,
   PageResult,
+  UpdateUserRequest,
+  UpdateUserResponse,
+  UserListFilters,
   UserSummary,
 } from '../models/user.model';
 
@@ -15,10 +18,19 @@ export class UserService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = '/api/v1/users';
 
-  getUsers(page = 0, size = 10): Observable<PageResult<UserSummary>> {
-    const params = new HttpParams()
+  getUsers(page = 0, size = 10, filters?: UserListFilters): Observable<PageResult<UserSummary>> {
+    let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
+
+    const trimmedSearch = filters?.search?.trim();
+    if (trimmedSearch) {
+      params = params.set('search', trimmedSearch);
+    }
+
+    if (filters?.status) {
+      params = params.set('status', filters.status);
+    }
 
     return this.http.get<PageResult<UserSummary>>(this.apiUrl, { params });
   }
@@ -37,5 +49,9 @@ export class UserService {
 
   createUser(payload: CreateUserRequest): Observable<CreateUserResponse> {
     return this.http.post<CreateUserResponse>(this.apiUrl, payload);
+  }
+
+  updateUser(id: string, payload: UpdateUserRequest): Observable<UpdateUserResponse> {
+    return this.http.put<UpdateUserResponse>(`${this.apiUrl}/${id}`, payload);
   }
 }

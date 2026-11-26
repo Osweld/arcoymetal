@@ -70,6 +70,15 @@ export const routes: Routes = [
         title: 'Nueva Cuenta de Usuario — Arco & Metal Mecánica',
       },
       {
+        path: 'users/:id',
+        canActivate: [roleGuard(['ADMINISTRATOR'])],
+        loadComponent: () =>
+          import('./features/identity-access/pages/user-detail/user-detail.component').then(
+            (m) => m.UserDetailComponent
+          ),
+        title: 'Gestionar Cuenta de Usuario — Arco & Metal Mecánica',
+      },
+      {
         path: 'inventory',
         loadComponent: () =>
           import('./shared/components/coming-soon/coming-soon.component').then(

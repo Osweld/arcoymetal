@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.DuplicateUserException;
+import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.LastAdministratorCannotBeModifiedException;
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.ReferencedEmployeeNotFoundException;
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.UserAlreadyHasRoleException;
 import com.arcoymetal.arcobackend.identityaccess.internal.domain.exception.UserDoesNotHaveRoleException;
@@ -32,7 +33,11 @@ public class IdentityAccessExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
-    @ExceptionHandler({ DuplicateUserException.class, UserAlreadyHasRoleException.class })
+    @ExceptionHandler({
+            DuplicateUserException.class,
+            UserAlreadyHasRoleException.class,
+            LastAdministratorCannotBeModifiedException.class
+    })
     public ResponseEntity<ApiErrorResponse> handleConflict(RuntimeException exception) {
         ApiErrorResponse response = new ApiErrorResponse(
                 Instant.now(),

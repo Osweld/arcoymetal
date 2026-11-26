@@ -10,6 +10,8 @@ import com.arcoymetal.arcobackend.identityaccess.internal.application.dto.PageQu
 import com.arcoymetal.arcobackend.identityaccess.internal.application.dto.PageResult;
 import com.arcoymetal.arcobackend.identityaccess.internal.application.dto.UserSummary;
 import com.arcoymetal.arcobackend.identityaccess.internal.application.port.in.GetAllUserWithPaginationUseCase;
+import com.arcoymetal.arcobackend.identityaccess.internal.application.query.SearchUsersQuery;
+import com.arcoymetal.arcobackend.identityaccess.internal.domain.vo.UserStatus;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,9 +25,12 @@ public class GetAllUserWithPaginationController {
     @GetMapping
     public ResponseEntity<PageResult<UserSummary>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        PageQuery pageQuery = new PageQuery(page, size);
-        PageResult<UserSummary> result = getAllUserWithPaginationUseCase.getAllUsers(pageQuery);
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) UserStatus status
+    ) {
+        SearchUsersQuery query = new SearchUsersQuery(new PageQuery(page, size), search, status);
+        PageResult<UserSummary> result = getAllUserWithPaginationUseCase.getAllUsers(query);
         return ResponseEntity.ok(result);
     }
 

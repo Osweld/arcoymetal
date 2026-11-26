@@ -74,6 +74,30 @@ public class User {
         this.roles.remove(role);
     }
 
+    public void updateAccount(Email newEmail, Set<Role> newRoles, UserStatus newStatus) {
+        Objects.requireNonNull(newEmail, "Email cannot be null");
+        Objects.requireNonNull(newRoles, "Roles cannot be null");
+        Objects.requireNonNull(newStatus, "UserStatus cannot be null");
+
+        if (newRoles.isEmpty()) {
+            throw new UserMustHaveAtLeastOneRoleException();
+        }
+
+        Set<Role> validatedRoles = new HashSet<>();
+        for (Role role : newRoles) {
+            validatedRoles.add(Objects.requireNonNull(role, "Role cannot be null"));
+        }
+
+        this.email = newEmail;
+        this.roles.clear();
+        this.roles.addAll(validatedRoles);
+        this.userStatus = newStatus;
+    }
+
+    public boolean isActiveAdministrator() {
+        return this.userStatus == UserStatus.ACTIVE && this.roles.contains(Role.ADMINISTRATOR);
+    }
+
     public UserId getUserId() {
         return userId;
     }

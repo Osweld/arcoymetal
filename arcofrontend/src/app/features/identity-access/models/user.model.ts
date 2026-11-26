@@ -22,6 +22,21 @@ export interface CreateUserResponse {
   userId: string;
 }
 
+export interface UpdateUserRequest {
+  email: string;
+  roles: Role[];
+  status: UserStatus;
+}
+
+export interface UpdateUserResponse {
+  userId: string;
+}
+
+export interface UserListFilters {
+  search?: string;
+  status?: UserStatus | '';
+}
+
 export type { PageResult } from '../../../shared/models/pagination.model';
 
 export const ROLE_LABELS: Record<Role, string> = {
