@@ -54,6 +54,8 @@ describe('EmployeeFormComponent', () => {
       isss: '',
       nup: '',
       pensionFundInstitution: 'AFP_CONFIA',
+      emergencyContactName: 'María López',
+      emergencyContactPhone: '70009999',
     });
 
     component.onSubmit();
@@ -72,6 +74,8 @@ describe('EmployeeFormComponent', () => {
       isss: null,
       nup: null,
       pensionFundInstitution: 'AFP_CONFIA',
+      emergencyContactName: 'María López',
+      emergencyContactPhone: '70009999',
     });
     expect(navigateSpy).toHaveBeenCalledWith(['/employees', 'emp-new-1']);
   });
@@ -116,6 +120,8 @@ describe('EmployeeFormComponent', () => {
       isss: '',
       nup: '',
       pensionFundInstitution: 'AFP_CONFIA',
+      emergencyContactName: '',
+      emergencyContactPhone: '',
     });
 
     component.onSubmit();

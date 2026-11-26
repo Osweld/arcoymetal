@@ -21,12 +21,24 @@ import { AuthService } from '../../auth/services/auth.service';
           </svg>
         </button>
 
+        <a
+          routerLink="/dashboard"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white p-0.5 ring-1 ring-slate-200 shadow-2xs lg:hidden overflow-hidden"
+          aria-label="Ir al Panel General"
+        >
+          <img
+            src="images/logo-full.jpg"
+            alt="Logo de Arco &amp; Metal Mecánica"
+            class="h-full w-full rounded-full object-contain"
+          />
+        </a>
+
         <div>
           <h1 class="text-sm sm:text-base font-bold text-slate-900">
             Sistema de Gestión Administrativa
           </h1>
           <p class="hidden sm:block text-xs text-slate-500">
-            Arco &amp; Metal Mecánica S.A.S. de C.V. &mdash; El Salvador
+            Arco &amp; Metal Mecánica &mdash; Metapán, Santa Ana, El Salvador
           </p>
         </div>
       </div>

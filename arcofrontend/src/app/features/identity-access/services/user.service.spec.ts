@@ -89,4 +89,35 @@ describe('UserService', () => {
 
     expect(receivedId).toBe('u-2');
   });
+
+  it('fetches linked employee IDs from GET /api/v1/users/linked-employee-ids', () => {
+    let received: string[] | undefined;
+    service.getLinkedEmployeeIds().subscribe((res) => (received = res));
+
+    const req = httpMock.expectOne('/api/v1/users/linked-employee-ids');
+    expect(req.request.method).toBe('GET');
+    req.flush(['e-1', 'e-2']);
+
+    expect(received).toEqual(['e-1', 'e-2']);
+  });
+
+  it('fetches user by employeeId from GET /api/v1/users/by-employee/:employeeId', () => {
+    const mockUser: UserSummary = {
+      id: 'u-1',
+      employeeId: 'e-1',
+      email: 'admin@arcoymetal.com.sv',
+      roles: ['ADMINISTRATOR'],
+      status: 'ACTIVE',
+      createdAt: '2026-11-24T12:00:00Z',
+    };
+
+    let received: UserSummary | undefined;
+    service.getUserByEmployeeId('e-1').subscribe((res) => (received = res));
+
+    const req = httpMock.expectOne('/api/v1/users/by-employee/e-1');
+    expect(req.request.method).toBe('GET');
+    req.flush(mockUser);
+
+    expect(received).toEqual(mockUser);
+  });
 });

@@ -11,17 +11,20 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
       <div class="sm:mx-auto sm:w-full sm:max-w-md px-4">
         <div class="flex justify-center">
           <div
-            class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-slate-950 font-black text-2xl shadow-lg"
-            aria-hidden="true"
+            class="flex h-28 w-28 items-center justify-center rounded-full bg-white p-1.5 shadow-xl ring-2 ring-cyan-400/40 overflow-hidden"
           >
-            A&amp;M
+            <img
+              src="images/logo-full.jpg"
+              alt="Logo de Arco &amp; Metal Mecánica"
+              class="h-full w-full rounded-full object-contain"
+            />
           </div>
         </div>
         <h1 class="mt-5 text-center text-2xl font-extrabold tracking-tight text-white">
           Arco &amp; Metal Mecánica
         </h1>
         <p class="mt-1.5 text-center text-sm text-slate-400">
-          Sistema Web Administrativo &bull; Acceso de Usuarios
+          Metapán, Santa Ana &bull; Sistema Web Administrativo
         </p>
       </div>
 

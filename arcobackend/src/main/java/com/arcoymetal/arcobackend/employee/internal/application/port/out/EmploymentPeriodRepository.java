@@ -12,6 +12,8 @@ public interface EmploymentPeriodRepository {
 
     void saveChange(EmploymentChange employmentChange);
 
+    void deleteChange(UUID employmentChangeId);
+
     EmploymentPeriod findById(UUID employmentId);
 
     boolean existsActiveByEmployeeId(UUID employeeId);

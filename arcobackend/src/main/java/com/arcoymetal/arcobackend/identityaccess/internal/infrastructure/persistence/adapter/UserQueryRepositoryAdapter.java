@@ -71,4 +71,17 @@ public class UserQueryRepositoryAdapter implements UserQueryRepository {
         return toUserSummary(userEntity);
     }
 
+    @Override
+    public UserSummary findByEmployeeId(UUID employeeId) {
+        UserEntity userEntity = springDataUserRepository.findByEmployeeId(employeeId)
+            .orElseThrow(() -> new UserNotFoundException(employeeId));
+
+        return toUserSummary(userEntity);
+    }
+
+    @Override
+    public List<UUID> findAllLinkedEmployeeIds() {
+        return springDataUserRepository.findAllLinkedEmployeeIds();
+    }
+
 }

@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-add-employee-emergency-contact
+      author: arcobackend
+      changes:
+        - addColumn:
+            tableName: employee
+            columns:
+              - column:
+                  name: emergency_contact_name
+                  type: VARCHAR(150)
+
+              - column:
+                  name: emergency_contact_phone
+                  type: VARCHAR(8)

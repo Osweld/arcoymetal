@@ -6,6 +6,7 @@ import { EmployeeDetailComponent } from './employee-detail.component';
 import { EmployeeService } from '../../services/employee.service';
 import { EmploymentPeriodService } from '../../services/employment-period.service';
 import { LocationService } from '../../services/location.service';
+import { UserService } from '../../../identity-access/services/user.service';
 import { EmployeeDetails, EmploymentPeriodDetails } from '../../models/employee.model';
 
 describe('EmployeeDetailComponent', () => {
@@ -24,6 +25,10 @@ describe('EmployeeDetailComponent', () => {
     isss: null,
     nup: null,
     pensionFundInstitution: 'AFP_CONFIA',
+    emergencyContactName: 'María Díaz',
+    emergencyContactPhone: '71112222',
+    employmentStatus: 'ACTIVE',
+    currentJobTitle: 'Soldador Senior',
     createdAt: '2026-11-24T12:00:00Z',
   };
 
@@ -73,6 +78,7 @@ describe('EmployeeDetailComponent', () => {
   it('pre-selects location selects, displays active employment, registers change and terminates period', () => {
     const getEmployeeHistory = vi.fn().mockReturnValue(of(activeHistory));
     const registerChange = vi.fn().mockReturnValue(of({ employmentChangeId: 'chg-2' }));
+    const removeChange = vi.fn().mockReturnValue(of(void 0));
     const terminatePeriod = vi.fn().mockReturnValue(of({ employmentPeriodId: 'ep-1' }));
 
     TestBed.configureTestingModule({
@@ -96,7 +102,22 @@ describe('EmployeeDetailComponent', () => {
             getEmployeeHistory,
             createEmploymentPeriod: vi.fn(),
             registerChange,
+            removeChange,
             terminatePeriod,
+          },
+        },
+        {
+          provide: UserService,
+          useValue: {
+            getUserByEmployeeId: () =>
+              of({
+                id: 'usr-1',
+                employeeId: 'emp-1',
+                email: 'roberto.user@arcoymetal.com.sv',
+                roles: ['MANAGER'],
+                status: 'ACTIVE',
+                createdAt: '2026-11-24T12:00:00Z',
+              }),
           },
         },
         {
@@ -123,6 +144,18 @@ describe('EmployeeDetailComponent', () => {
     expect(component.currentEmployment()?.jobTitle).toBe('Soldador Senior');
     expect(component.currentEmployment()?.baseSalary).toBe(780);
 
+    // 1b. Bug 1: linkedUser hides "+ Usuario" and renders the linked account email badge
+    expect(fixture.nativeElement.textContent).toContain('Cuenta: roberto.user@arcoymetal.com.sv');
+    expect(fixture.nativeElement.textContent).not.toContain('+ Usuario');
+
+    // 1c. Bug 3 & A2: only latest non-initial change can be removed, and salary delta is computed
+    expect(component.canRemoveChange(activeHistory[0], activeHistory[0].changes[0])).toBe(false);
+    expect(component.canRemoveChange(activeHistory[0], activeHistory[0].changes[1])).toBe(true);
+    const delta = component.getSalaryDelta(activeHistory[0], activeHistory[0].changes[1]);
+    expect(delta?.diff).toBe(129.5);
+    component.onRemoveChange('ep-1', 'chg-latest');
+    expect(removeChange).toHaveBeenCalledWith('ep-1', 'chg-latest');
+
     // 2. Edit form pre-selects department, municipality, and district in the DOM
     component.toggleEditMode();
     fixture.detectChanges();
@@ -130,8 +163,16 @@ describe('EmployeeDetailComponent', () => {
     expect((fixture.nativeElement.querySelector('#edit-mun') as HTMLSelectElement).value).toBe('AH01');
     expect((fixture.nativeElement.querySelector('#edit-dist') as HTMLSelectElement).value).toBe('AH0101');
 
-    // 3. Register employment change
+    // 3. Bug 2: Register employment change renders all 5 contract type radio labels in DOM
     component.togglePanel('change');
+    fixture.detectChanges();
+    const changePanelText = fixture.nativeElement.textContent;
+    expect(changePanelText).toContain('Tiempo Completo (Planilla)');
+    expect(changePanelText).toContain('Medio Tiempo');
+    expect(changePanelText).toContain('Servicios Profesionales / Contratista');
+    expect(changePanelText).toContain('Pasantía');
+    expect(changePanelText).toContain('Temporal / Por Obra');
+
     component.registerChangeForm.setValue({
       effectiveFrom: '2026-06-01',
       jobTitle: 'Maestro Soldador',
@@ -195,7 +236,14 @@ describe('EmployeeDetailComponent', () => {
             getEmployeeHistory: () => of([]),
             createEmploymentPeriod,
             registerChange: vi.fn(),
+            removeChange: vi.fn(),
             terminatePeriod: vi.fn(),
+          },
+        },
+        {
+          provide: UserService,
+          useValue: {
+            getUserByEmployeeId: () => throwError(() => ({ status: 404 })),
           },
         },
         {

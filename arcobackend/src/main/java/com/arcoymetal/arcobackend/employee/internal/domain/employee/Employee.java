@@ -18,6 +18,7 @@ public class Employee {
     private final ISSS isss;
     private final NUP nup;
     private final PensionFundInstitution pensionFundInstitution;
+    private final EmergencyContact emergencyContact;
 
     private Employee(
             EmployeeId employeeId,
@@ -31,7 +32,8 @@ public class Employee {
             NIT nit,
             ISSS isss,
             NUP nup,
-            PensionFundInstitution pensionFundInstitution) {
+            PensionFundInstitution pensionFundInstitution,
+            EmergencyContact emergencyContact) {
         this.employeeId = Objects.requireNonNull(employeeId, "Employee ID cannot be null");
         this.name = Objects.requireNonNull(name, "Name cannot be null");
         this.email = Objects.requireNonNull(email, "Email cannot be null");
@@ -45,6 +47,7 @@ public class Employee {
         this.nup = nup;
         this.pensionFundInstitution = Objects.requireNonNull(pensionFundInstitution,
                 "Pension Fund Institution cannot be null");
+        this.emergencyContact = emergencyContact;
     }
 
     public static Employee create(
@@ -61,6 +64,25 @@ public class Employee {
             NUP nup,
             PensionFundInstitution pensionFundInstitution,
             Clock clock) {
+        return create(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup,
+                pensionFundInstitution, null, clock);
+    }
+
+    public static Employee create(
+            EmployeeId employeeId,
+            Name name,
+            Email email,
+            PhoneNumber phoneNumber,
+            Gender gender,
+            BirthDate birthDate,
+            Address address,
+            DUI dui,
+            NIT nit,
+            ISSS isss,
+            NUP nup,
+            PensionFundInstitution pensionFundInstitution,
+            EmergencyContact emergencyContact,
+            Clock clock) {
 
         Objects.requireNonNull(birthDate, "Birth date cannot be null");
         Objects.requireNonNull(clock, "Clock cannot be null");
@@ -76,7 +98,7 @@ public class Employee {
         }
 
         return new Employee(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup,
-                pensionFundInstitution);
+                pensionFundInstitution, emergencyContact);
     }
 
     public static Employee update(
@@ -93,6 +115,25 @@ public class Employee {
             NUP nup,
             PensionFundInstitution pensionFundInstitution,
             Clock clock) {
+        return update(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup,
+                pensionFundInstitution, null, clock);
+    }
+
+    public static Employee update(
+            EmployeeId employeeId,
+            Name name,
+            Email email,
+            PhoneNumber phoneNumber,
+            Gender gender,
+            BirthDate birthDate,
+            Address address,
+            DUI dui,
+            NIT nit,
+            ISSS isss,
+            NUP nup,
+            PensionFundInstitution pensionFundInstitution,
+            EmergencyContact emergencyContact,
+            Clock clock) {
         Objects.requireNonNull(birthDate, "Birth date cannot be null");
         Objects.requireNonNull(clock, "Clock cannot be null");
 
@@ -104,7 +145,7 @@ public class Employee {
             throw new IllegalArgumentException("Employee must be at least 18 years old");
         }
         return new Employee(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup,
-                pensionFundInstitution);
+                pensionFundInstitution, emergencyContact);
     }
 
     public static Employee reconstitute(
@@ -120,8 +161,26 @@ public class Employee {
             ISSS isss,
             NUP nup,
             PensionFundInstitution pensionFundInstitution) {
+        return reconstitute(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup,
+                pensionFundInstitution, null);
+    }
+
+    public static Employee reconstitute(
+            EmployeeId employeeId,
+            Name name,
+            Email email,
+            PhoneNumber phoneNumber,
+            Gender gender,
+            BirthDate birthDate,
+            Address address,
+            DUI dui,
+            NIT nit,
+            ISSS isss,
+            NUP nup,
+            PensionFundInstitution pensionFundInstitution,
+            EmergencyContact emergencyContact) {
         return new Employee(employeeId, name, email, phoneNumber, gender, birthDate, address, dui, nit, isss, nup,
-                pensionFundInstitution);
+                pensionFundInstitution, emergencyContact);
     }
 
     public EmployeeId getEmployeeId() {
@@ -170,6 +229,10 @@ public class Employee {
 
     public PensionFundInstitution getPensionFundInstitution() {
         return pensionFundInstitution;
+    }
+
+    public EmergencyContact getEmergencyContact() {
+        return emergencyContact;
     }
 
 }

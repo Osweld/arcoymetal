@@ -15,6 +15,7 @@ import com.arcoymetal.arcobackend.employee.internal.domain.employee.BirthDate;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.DUI;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.DistrictId;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.Email;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.EmergencyContact;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.Employee;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.EmployeeId;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.ISSS;
@@ -39,6 +40,10 @@ public class CreateEmployeeService implements CreateEmployeeUseCase {
 
         Objects.requireNonNull(command, "CreateEmployeeCommand cannot be null");
 
+        EmergencyContact emergencyContact = buildEmergencyContact(
+                command.emergencyContactName(),
+                command.emergencyContactPhone());
+
         EmployeeId employeeId = EmployeeId.generate();
         Employee employee = Employee.create(
                 employeeId,
@@ -53,6 +58,7 @@ public class CreateEmployeeService implements CreateEmployeeUseCase {
                 hasText(command.isss()) ? new ISSS(command.isss()) : null,
                 hasText(command.nup()) ? new NUP(command.nup()) : null,
                 command.pensionFundInstitution(),
+                emergencyContact,
                 clock);
 
         if (employeeRepository.existsByEmail(employee.getEmail().value())) {
@@ -77,6 +83,19 @@ public class CreateEmployeeService implements CreateEmployeeUseCase {
 
         employeeRepository.save(employee);
         return employeeId;
+    }
+
+    private static EmergencyContact buildEmergencyContact(String name, String phone) {
+        boolean hasName = hasText(name);
+        boolean hasPhone = hasText(phone);
+        if (!hasName && !hasPhone) {
+            return null;
+        }
+        if (!hasName || !hasPhone) {
+            throw new IllegalArgumentException(
+                    "Both emergency contact name and phone number are required when providing an emergency contact.");
+        }
+        return new EmergencyContact(name, new PhoneNumber(phone));
     }
 
     private static boolean hasText(String value) {

@@ -1,6 +1,7 @@
 package com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,6 +15,8 @@ public interface SpringDataEmploymentChangeRepository extends JpaRepository<Empl
     Optional<List<EmploymentChangeEntity>> findByEmploymentId(UUID employmentId);
 
     List<EmploymentChangeEntity> findByEmploymentIdOrderByEffectiveFromDesc(UUID employmentId);
+
+    List<EmploymentChangeEntity> findByEmploymentIdInOrderByEffectiveFromDesc(Collection<UUID> employmentIds);
 
     Optional<EmploymentChangeEntity> findFirstByEmploymentIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(
             UUID employmentId,

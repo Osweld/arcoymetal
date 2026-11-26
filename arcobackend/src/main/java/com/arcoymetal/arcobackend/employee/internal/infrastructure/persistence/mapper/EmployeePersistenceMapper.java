@@ -8,6 +8,7 @@ import com.arcoymetal.arcobackend.employee.internal.domain.employee.BirthDate;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.DUI;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.DistrictId;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.Email;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.EmergencyContact;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.Employee;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.EmployeeId;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.ISSS;
@@ -36,11 +37,20 @@ public class EmployeePersistenceMapper {
             employee.getNit() != null ? employee.getNit().value() : null,
             employee.getIsss() != null ? employee.getIsss().value() : null,
             employee.getNup() != null ? employee.getNup().value() : null,
-            employee.getPensionFundInstitution()
+            employee.getPensionFundInstitution(),
+            employee.getEmergencyContact() != null ? employee.getEmergencyContact().name() : null,
+            employee.getEmergencyContact() != null ? employee.getEmergencyContact().phoneNumber().value() : null
         );
     }
 
     public Employee toDomain(EmployeeEntity entity) {
+        EmergencyContact emergencyContact = (entity.getEmergencyContactName() != null
+                && entity.getEmergencyContactPhone() != null)
+                ? new EmergencyContact(
+                        entity.getEmergencyContactName(),
+                        new PhoneNumber(entity.getEmergencyContactPhone()))
+                : null;
+
         return Employee.reconstitute(
             new EmployeeId(entity.getId()),
             new Name(entity.getFirstName(), entity.getLastName()),
@@ -56,7 +66,8 @@ public class EmployeePersistenceMapper {
             entity.getNit() != null ? new NIT(entity.getNit()) : null,
             entity.getIsss() != null ? new ISSS(entity.getIsss()) : null,
             entity.getNup() != null ? new NUP(entity.getNup()) : null,
-            entity.getPensionFundInstitution()
+            entity.getPensionFundInstitution(),
+            emergencyContact
         );
     }
 }

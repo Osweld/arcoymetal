@@ -26,7 +26,9 @@ public class EmployeeRequestMapper {
           request.nit(),
           request.isss(),
           request.nup(),
-          request.pensionFundInstitution()
+          request.pensionFundInstitution(),
+          request.emergencyContactName(),
+          request.emergencyContactPhone()
         );
     }
 
@@ -45,7 +47,9 @@ public class EmployeeRequestMapper {
           request.nit(),
           request.isss(),
           request.nup(),
-          request.pensionFundInstitution()
+          request.pensionFundInstitution(),
+          request.emergencyContactName(),
+          request.emergencyContactPhone()
         );
     }
 

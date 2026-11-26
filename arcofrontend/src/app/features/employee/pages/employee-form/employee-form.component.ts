@@ -1,5 +1,11 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { EmployeeService } from '../../services/employee.service';
 import { LocationService } from '../../services/location.service';
@@ -184,7 +190,13 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
               </span>
               @if (showError('birthDate')) {
                 <p id="err-birthDate" role="alert" class="mt-1 text-xs font-medium text-rose-600">
-                  Indica una fecha de nacimiento válida en el pasado.
+                  @if (employeeForm.controls.birthDate.hasError('futureDate')) {
+                    La fecha de nacimiento no puede ser futura.
+                  } @else if (employeeForm.controls.birthDate.hasError('underage')) {
+                    El empleado debe tener al menos 18 años cumplidos.
+                  } @else {
+                    Indica una fecha de nacimiento válida.
+                  }
                 </p>
               }
             </div>
@@ -447,6 +459,67 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
           </div>
         </fieldset>
 
+        <!-- 4. Contacto de Emergencia (Opcional) -->
+        <fieldset class="rounded-xl border border-slate-200 bg-white p-6 shadow-2xs space-y-5">
+          <legend class="px-2 text-base font-bold text-slate-900">
+            4. Contacto de Emergencia <span class="text-xs font-normal text-slate-500">(Opcional)</span>
+          </legend>
+
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label for="emp-emergencyContactName" class="block text-sm font-semibold text-slate-800 mb-1.5">
+                Nombre del contacto
+              </label>
+              <input
+                id="emp-emergencyContactName"
+                name="emergencyContactName"
+                type="text"
+                formControlName="emergencyContactName"
+                maxlength="150"
+                placeholder="Ej. María López (Esposa)"
+                [attr.aria-describedby]="showError('emergencyContactName') ? 'err-emergencyContactName' : null"
+                class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+              />
+              @if (showError('emergencyContactName')) {
+                <p id="err-emergencyContactName" role="alert" class="mt-1 text-xs font-medium text-rose-600">
+                  El nombre del contacto no puede superar 150 caracteres.
+                </p>
+              }
+            </div>
+
+            <div>
+              <label for="emp-emergencyContactPhone" class="block text-sm font-semibold text-slate-800 mb-1.5">
+                Teléfono de emergencia (8 dígitos sin guion)
+              </label>
+              <input
+                id="emp-emergencyContactPhone"
+                name="emergencyContactPhone"
+                type="text"
+                inputmode="numeric"
+                formControlName="emergencyContactPhone"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+                maxlength="8"
+                placeholder="70009999"
+                [attr.aria-describedby]="showError('emergencyContactPhone') ? 'err-emergencyContactPhone' : null"
+                class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-base sm:text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+              />
+              @if (showError('emergencyContactPhone')) {
+                <p id="err-emergencyContactPhone" role="alert" class="mt-1 text-xs font-medium text-rose-600">
+                  El teléfono de emergencia debe contener exactamente 8 dígitos numéricos.
+                </p>
+              }
+            </div>
+          </div>
+
+          @if (employeeForm.hasError('incompleteEmergencyContact') && (submitAttempted() || employeeForm.controls.emergencyContactName.touched || employeeForm.controls.emergencyContactPhone.touched)) {
+            <p role="alert" class="text-xs font-medium text-rose-600">
+              Si registras contacto de emergencia, debes completar tanto el nombre como el teléfono de 8 dígitos.
+            </p>
+          }
+        </fieldset>
+
         <!-- Actions -->
         <div class="flex items-center justify-end gap-3 pt-2">
           <a
@@ -504,21 +577,26 @@ export class EmployeeFormComponent implements OnInit {
     { value: 'ISP', label: PENSION_FUND_LABELS.ISP },
   ];
 
-  readonly employeeForm = this.fb.nonNullable.group({
-    firstName: ['', [Validators.required, Validators.maxLength(100)]],
-    lastName: ['', [Validators.required, Validators.maxLength(100)]],
-    email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
-    phoneNumber: ['', [Validators.required, Validators.pattern(/^\d{8}$/)]],
-    gender: ['MALE' as Gender, [Validators.required]],
-    birthDate: ['', [Validators.required]],
-    addressLine: ['', [Validators.required, Validators.maxLength(150)]],
-    districtId: ['', [Validators.required, Validators.maxLength(10)]],
-    dui: ['', [Validators.required, Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
-    nit: ['', [Validators.pattern(/^(?:\d{14}|\d{4}-\d{6}-\d{3}-\d)$/)]],
-    isss: ['', [Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
-    nup: ['', [Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
-    pensionFundInstitution: ['AFP_CONFIA' as PensionFundInstitution, [Validators.required]],
-  });
+  readonly employeeForm = this.fb.nonNullable.group(
+    {
+      firstName: ['', [Validators.required, Validators.maxLength(100)]],
+      lastName: ['', [Validators.required, Validators.maxLength(100)]],
+      email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
+      phoneNumber: ['', [Validators.required, Validators.pattern(/^\d{8}$/)]],
+      gender: ['MALE' as Gender, [Validators.required]],
+      birthDate: ['', [Validators.required, minimumAgeValidator(18)]],
+      addressLine: ['', [Validators.required, Validators.maxLength(150)]],
+      districtId: ['', [Validators.required, Validators.maxLength(10)]],
+      dui: ['', [Validators.required, Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
+      nit: ['', [Validators.pattern(/^(?:\d{14}|\d{4}-\d{6}-\d{3}-\d)$/)]],
+      isss: ['', [Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
+      nup: ['', [Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
+      pensionFundInstitution: ['AFP_CONFIA' as PensionFundInstitution, [Validators.required]],
+      emergencyContactName: ['', [Validators.maxLength(150)]],
+      emergencyContactPhone: ['', [Validators.pattern(/^\d{8}$/)]],
+    },
+    { validators: [emergencyContactPairValidator] }
+  );
 
   ngOnInit(): void {
     this.locationService.getHierarchy().subscribe({
@@ -578,6 +656,10 @@ export class EmployeeFormComponent implements OnInit {
       isss: raw.isss.trim() ? raw.isss.trim() : null,
       nup: raw.nup.trim() ? raw.nup.trim() : null,
       pensionFundInstitution: raw.pensionFundInstitution,
+      emergencyContactName: raw.emergencyContactName.trim() ? raw.emergencyContactName.trim() : null,
+      emergencyContactPhone: raw.emergencyContactPhone.trim()
+        ? raw.emergencyContactPhone.trim()
+        : null,
     };
 
     this.employeeService.createEmployee(payload).subscribe({
@@ -596,4 +678,43 @@ export class EmployeeFormComponent implements OnInit {
       },
     });
   }
+}
+
+function minimumAgeValidator(minYears: number) {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value as string;
+    if (!value) return null;
+    const parts = value.split('-').map(Number);
+    if (parts.length !== 3 || parts.some(Number.isNaN)) return { invalidDate: true };
+
+    const [year, month, day] = parts;
+    const today = new Date();
+    const todayYear = today.getFullYear();
+    const todayMonth = today.getMonth() + 1;
+    const todayDay = today.getDate();
+
+    if (
+      year > todayYear ||
+      (year === todayYear && month > todayMonth) ||
+      (year === todayYear && month === todayMonth && day > todayDay)
+    ) {
+      return { futureDate: true };
+    }
+
+    let age = todayYear - year;
+    if (todayMonth < month || (todayMonth === month && todayDay < day)) {
+      age--;
+    }
+
+    return age < minYears ? { underage: true } : null;
+  };
+}
+
+function emergencyContactPairValidator(group: AbstractControl): ValidationErrors | null {
+  const name = (group.get('emergencyContactName')?.value ?? '').trim();
+  const phone = (group.get('emergencyContactPhone')?.value ?? '').trim();
+  if ((name && !phone) || (!name && phone)) {
+    return { incompleteEmergencyContact: true };
+  }
+  return null;
 }

@@ -22,6 +22,10 @@ public record EmployeeDetails(
     String isss,
     String nup,
     PensionFundInstitution pensionFundInstitution,
+    String emergencyContactName,
+    String emergencyContactPhone,
+    EmployeeEmploymentStatusFilter employmentStatus,
+    String currentJobTitle,
     Instant createdAt
 ) {
 

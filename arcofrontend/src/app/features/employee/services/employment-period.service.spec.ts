@@ -91,4 +91,15 @@ describe('EmploymentPeriodService', () => {
 
     expect(receivedId).toBe('ep-1');
   });
+
+  it('removes latest employment change via DELETE /api/v1/employment-periods/:id/changes/:changeId', () => {
+    let completed = false;
+    service.removeChange('ep-1', 'chg-2').subscribe(() => (completed = true));
+
+    const req = httpMock.expectOne('/api/v1/employment-periods/ep-1/changes/chg-2');
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(completed).toBe(true);
+  });
 });

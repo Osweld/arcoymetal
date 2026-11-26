@@ -1,11 +1,20 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
-import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormControl,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { EmployeeService } from '../../services/employee.service';
 import { EmploymentPeriodService } from '../../services/employment-period.service';
 import { LocationService } from '../../services/location.service';
+import { UserService } from '../../../identity-access/services/user.service';
+import { UserSummary } from '../../../identity-access/models/user.model';
 import {
   CONTRACT_TYPE_LABELS,
   ContractType,
@@ -34,7 +43,7 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
 
 @Component({
   selector: 'app-employee-detail',
-  imports: [RouterLink, ReactiveFormsModule, CurrencyPipe, DatePipe],
+  imports: [RouterLink, ReactiveFormsModule, CurrencyPipe, DatePipe, DecimalPipe],
   template: `
     <div class="mx-auto max-w-4xl space-y-6">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -86,13 +95,22 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
               </button>
             }
 
-            <a
-              [routerLink]="['/users/new']"
-              [queryParams]="{ employeeId: emp.employeeId }"
-              class="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400"
-            >
-              + Usuario
-            </a>
+            @if (linkedUser(); as user) {
+              <span
+                class="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800"
+                title="Este empleado ya cuenta con una cuenta de acceso al sistema"
+              >
+                Cuenta: {{ user.email }}
+              </span>
+            } @else {
+              <a
+                [routerLink]="['/users/new']"
+                [queryParams]="{ employeeId: emp.employeeId }"
+                class="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400"
+              >
+                + Usuario
+              </a>
+            }
           </div>
         }
       </div>
@@ -273,7 +291,7 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                 <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
                   @for (ct of contractTypeOptions; track ct.value) {
                     <label
-                      class="flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-semibold cursor-pointer transition-colors"
+                      class="flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-semibold text-slate-800 cursor-pointer transition-colors"
                       [class.border-amber-500]="employmentPeriodForm.controls.contractType.value === ct.value"
                       [class.bg-amber-50/70]="employmentPeriodForm.controls.contractType.value === ct.value"
                       [class.border-slate-300]="employmentPeriodForm.controls.contractType.value !== ct.value"
@@ -337,8 +355,18 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                     formControlName="effectiveFrom"
                     [min]="activePeriod()?.startDate ?? '1950-01-01'"
                     required
+                    [attr.aria-describedby]="showChangeError('effectiveFrom') || isEffectiveFromBeforePeriodStart() ? 'err-chg-effectiveFrom' : null"
                     class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-amber-500 focus:outline-none"
                   />
+                  @if (showChangeError('effectiveFrom')) {
+                    <p id="err-chg-effectiveFrom" role="alert" class="mt-1 text-xs font-medium text-rose-600">
+                      La fecha de vigencia es obligatoria.
+                    </p>
+                  } @else if (isEffectiveFromBeforePeriodStart()) {
+                    <p id="err-chg-effectiveFrom" role="alert" class="mt-1 text-xs font-medium text-rose-600">
+                      La fecha de vigencia no puede ser anterior al inicio del periodo ({{ activePeriod()?.startDate }}).
+                    </p>
+                  }
                 </div>
 
                 <div>
@@ -352,8 +380,14 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                     formControlName="jobTitle"
                     maxlength="100"
                     required
+                    [attr.aria-describedby]="showChangeError('jobTitle') ? 'err-chg-jobTitle' : null"
                     class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-amber-500 focus:outline-none"
                   />
+                  @if (showChangeError('jobTitle')) {
+                    <p id="err-chg-jobTitle" role="alert" class="mt-1 text-xs font-medium text-rose-600">
+                      El cargo es obligatorio (máximo 100 caracteres).
+                    </p>
+                  }
                 </div>
 
                 <div>
@@ -371,8 +405,14 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                     spellcheck="false"
                     placeholder="750.00"
                     required
+                    [attr.aria-describedby]="showChangeError('baseSalary') ? 'err-chg-baseSalary' : null"
                     class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 font-mono text-sm text-slate-900 focus:border-amber-500 focus:outline-none"
                   />
+                  @if (showChangeError('baseSalary')) {
+                    <p id="err-chg-baseSalary" role="alert" class="mt-1 text-xs font-medium text-rose-600">
+                      Ingresa un monto válido >= 0.00 con máximo 2 decimales.
+                    </p>
+                  }
                 </div>
               </div>
 
@@ -383,14 +423,14 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                 <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
                   @for (ct of contractTypeOptions; track ct.value) {
                     <label
-                      class="flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-semibold cursor-pointer transition-colors"
+                      class="flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-semibold text-slate-800 cursor-pointer transition-colors"
                       [class.border-amber-500]="registerChangeForm.controls.contractType.value === ct.value"
                       [class.bg-amber-50/70]="registerChangeForm.controls.contractType.value === ct.value"
                       [class.border-slate-300]="registerChangeForm.controls.contractType.value !== ct.value"
                     >
                       <input
                         type="radio"
-                        name="changeContractType"
+                        name="contractType"
                         [value]="ct.value"
                         formControlName="contractType"
                         class="h-4 w-4 accent-amber-600 shrink-0"
@@ -447,8 +487,18 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                     formControlName="endDate"
                     [min]="activePeriod()?.startDate ?? '1950-01-01'"
                     required
+                    [attr.aria-describedby]="showTerminateError('endDate') || isEndDateBeforePeriodStart() ? 'err-term-endDate' : null"
                     class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-rose-500 focus:outline-none"
                   />
+                  @if (showTerminateError('endDate')) {
+                    <p id="err-term-endDate" role="alert" class="mt-1 text-xs font-medium text-rose-600">
+                      La fecha de baja es obligatoria.
+                    </p>
+                  } @else if (isEndDateBeforePeriodStart()) {
+                    <p id="err-term-endDate" role="alert" class="mt-1 text-xs font-medium text-rose-600">
+                      La fecha de baja no puede ser anterior al inicio del periodo ({{ activePeriod()?.startDate }}).
+                    </p>
+                  }
                 </div>
 
                 <div>
@@ -581,8 +631,20 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                     type="date"
                     formControlName="birthDate"
                     required
+                    [attr.aria-describedby]="showEditError('birthDate') ? 'err-edit-birthDate' : null"
                     class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-amber-500 focus:outline-none"
                   />
+                  @if (showEditError('birthDate')) {
+                    <p id="err-edit-birthDate" role="alert" class="mt-1 text-xs font-medium text-rose-600">
+                      @if (editForm.controls.birthDate.hasError('futureDate')) {
+                        La fecha de nacimiento no puede ser futura.
+                      } @else if (editForm.controls.birthDate.hasError('underage')) {
+                        El empleado debe tener al menos 18 años cumplidos.
+                      } @else {
+                        Indica una fecha de nacimiento válida.
+                      }
+                    </p>
+                  }
                 </div>
 
                 <div>
@@ -755,6 +817,53 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                   }
                 </div>
               </div>
+
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 border-t border-slate-100 pt-4">
+                <div>
+                  <label for="edit-emergencyContactName" class="block text-sm font-semibold text-slate-800 mb-1">
+                    Contacto de emergencia — Nombre (Opcional)
+                  </label>
+                  <input
+                    id="edit-emergencyContactName"
+                    name="emergencyContactName"
+                    type="text"
+                    maxlength="150"
+                    formControlName="emergencyContactName"
+                    placeholder="Ej. María López (Esposa)"
+                    class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label for="edit-emergencyContactPhone" class="block text-sm font-semibold text-slate-800 mb-1">
+                    Contacto de emergencia — Teléfono (8 dígitos)
+                  </label>
+                  <input
+                    id="edit-emergencyContactPhone"
+                    name="emergencyContactPhone"
+                    type="text"
+                    inputmode="numeric"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    maxlength="8"
+                    formControlName="emergencyContactPhone"
+                    placeholder="70009999"
+                    class="block w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-amber-500 focus:outline-none"
+                  />
+                  @if (showEditError('emergencyContactPhone')) {
+                    <p role="alert" class="mt-1 text-xs font-medium text-rose-600">
+                      El teléfono de emergencia debe contener exactamente 8 dígitos numéricos.
+                    </p>
+                  }
+                </div>
+              </div>
+
+              @if (editForm.hasError('incompleteEmergencyContact') && (editSubmitAttempted() || editForm.controls.emergencyContactName.touched || editForm.controls.emergencyContactPhone.touched)) {
+                <p role="alert" class="text-xs font-medium text-rose-600">
+                  Si registras contacto de emergencia, debes completar tanto el nombre como el teléfono de 8 dígitos.
+                </p>
+              }
             </fieldset>
 
             <div class="flex justify-end gap-3 pt-2">
@@ -813,6 +922,17 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
               <div class="flex justify-between gap-4">
                 <dt class="text-slate-500">Dirección</dt>
                 <dd class="font-medium text-slate-900 text-right">{{ emp.addressLine }}</dd>
+              </div>
+              <div class="flex justify-between gap-4 border-t border-slate-100 pt-3">
+                <dt class="text-slate-500">Contacto de emergencia</dt>
+                <dd class="font-medium text-slate-900 text-right">
+                  @if (emp.emergencyContactName && emp.emergencyContactPhone) {
+                    {{ emp.emergencyContactName }}
+                    <span class="block font-mono text-xs text-slate-500">Tel: {{ emp.emergencyContactPhone }}</span>
+                  } @else {
+                    <span class="text-slate-400">No registrado</span>
+                  }
+                </dd>
               </div>
             </dl>
           </section>
@@ -915,6 +1035,7 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                         --label-2: 'Cargo / Puesto';
                         --label-3: 'Contrato';
                         --label-4: 'Salario Base';
+                        --label-5: 'Acciones';
                       "
                     >
                       <thead class="bg-slate-50 text-left text-[11px] font-bold uppercase tracking-wider text-slate-600">
@@ -923,6 +1044,7 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                           <th scope="col" class="px-4 py-2.5 border-b border-slate-200">Cargo / Puesto</th>
                           <th scope="col" class="px-4 py-2.5 border-b border-slate-200">Contrato</th>
                           <th scope="col" class="px-4 py-2.5 border-b border-slate-200 text-right">Salario Base</th>
+                          <th scope="col" class="px-4 py-2.5 border-b border-slate-200 text-right">Acciones</th>
                         </tr>
                       </thead>
                       <tbody class="divide-y divide-slate-100 text-sm">
@@ -938,7 +1060,53 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                               {{ contractLabels[change.contractType] }}
                             </td>
                             <td class="px-4 py-3 text-right font-mono font-bold text-slate-900">
-                              {{ change.baseSalary | currency: 'USD' : 'symbol' : '1.2-2' }}
+                              <div>{{ change.baseSalary | currency: 'USD' : 'symbol' : '1.2-2' }}</div>
+                              @if (getSalaryDelta(period, change); as delta) {
+                                <div
+                                  class="text-[11px] font-semibold"
+                                  [class.text-emerald-700]="delta.diff > 0"
+                                  [class.text-rose-700]="delta.diff < 0"
+                                >
+                                  {{ delta.diff > 0 ? '+' : '' }}{{ delta.diff | currency: 'USD' : 'symbol' : '1.2-2' }}
+                                  @if (delta.percent !== null) {
+                                    ({{ delta.percent > 0 ? '+' : '' }}{{ delta.percent | number: '1.1-1' }}%)
+                                  }
+                                </div>
+                              }
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                              @if (canRemoveChange(period, change)) {
+                                @if (confirmDeleteChangeId() === change.employmentChangeId) {
+                                  <div class="inline-flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      [disabled]="savingAction()"
+                                      (click)="onRemoveChange(period.employmentPeriodId, change.employmentChangeId)"
+                                      class="rounded-md bg-rose-600 px-2 py-1 text-[11px] font-bold text-white hover:bg-rose-700 disabled:opacity-60 cursor-pointer"
+                                    >
+                                      Confirmar
+                                    </button>
+                                    <button
+                                      type="button"
+                                      (click)="confirmDeleteChangeId.set(null)"
+                                      class="rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                                    >
+                                      Cancelar
+                                    </button>
+                                  </div>
+                                } @else {
+                                  <button
+                                    type="button"
+                                    (click)="confirmDeleteChangeId.set(change.employmentChangeId)"
+                                    class="rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100 cursor-pointer"
+                                    title="Eliminar este último cambio si fue registrado por error"
+                                  >
+                                    Eliminar
+                                  </button>
+                                }
+                              } @else {
+                                <span class="text-[11px] text-slate-400">&mdash;</span>
+                              }
                             </td>
                           </tr>
                         }
@@ -959,10 +1127,12 @@ export class EmployeeDetailComponent implements OnInit {
   private readonly employeeService = inject(EmployeeService);
   private readonly employmentPeriodService = inject(EmploymentPeriodService);
   private readonly locationService = inject(LocationService);
+  private readonly userService = inject(UserService);
   private readonly fb = inject(FormBuilder);
 
   employeeId = '';
   readonly employee = signal<EmployeeDetails | null>(null);
+  readonly linkedUser = signal<UserSummary | null>(null);
   readonly employmentHistory = signal<EmploymentPeriodDetails[]>([]);
   readonly departments = signal<DepartmentDetails[]>([]);
   readonly loading = signal(true);
@@ -973,6 +1143,10 @@ export class EmployeeDetailComponent implements OnInit {
   readonly activePanel = signal<'none' | 'edit' | 'period' | 'change' | 'terminate'>('none');
   readonly savingAction = signal(false);
   readonly periodSubmitAttempted = signal(false);
+  readonly changeSubmitAttempted = signal(false);
+  readonly terminateSubmitAttempted = signal(false);
+  readonly editSubmitAttempted = signal(false);
+  readonly confirmDeleteChangeId = signal<string | null>(null);
 
   readonly selectedDepartmentId = signal<string>('');
   readonly selectedMunicipalityId = signal<string>('');
@@ -1043,21 +1217,26 @@ export class EmployeeDetailComponent implements OnInit {
     return mun ? mun.districts : [];
   });
 
-  readonly editForm = this.fb.nonNullable.group({
-    firstName: ['', [Validators.required, Validators.maxLength(100)]],
-    lastName: ['', [Validators.required, Validators.maxLength(100)]],
-    email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
-    phoneNumber: ['', [Validators.required, Validators.pattern(/^\d{8}$/)]],
-    gender: ['MALE' as Gender, [Validators.required]],
-    birthDate: ['', [Validators.required]],
-    addressLine: ['', [Validators.required, Validators.maxLength(150)]],
-    districtId: ['', [Validators.required, Validators.maxLength(10)]],
-    dui: ['', [Validators.required, Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
-    nit: ['', [Validators.pattern(/^(?:\d{14}|\d{4}-\d{6}-\d{3}-\d)$/)]],
-    isss: ['', [Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
-    nup: ['', [Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
-    pensionFundInstitution: ['AFP_CONFIA' as PensionFundInstitution, [Validators.required]],
-  });
+  readonly editForm = this.fb.nonNullable.group(
+    {
+      firstName: ['', [Validators.required, Validators.maxLength(100)]],
+      lastName: ['', [Validators.required, Validators.maxLength(100)]],
+      email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
+      phoneNumber: ['', [Validators.required, Validators.pattern(/^\d{8}$/)]],
+      gender: ['MALE' as Gender, [Validators.required]],
+      birthDate: ['', [Validators.required, minimumAgeValidator(18)]],
+      addressLine: ['', [Validators.required, Validators.maxLength(150)]],
+      districtId: ['', [Validators.required, Validators.maxLength(10)]],
+      dui: ['', [Validators.required, Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
+      nit: ['', [Validators.pattern(/^(?:\d{14}|\d{4}-\d{6}-\d{3}-\d)$/)]],
+      isss: ['', [Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
+      nup: ['', [Validators.pattern(/^(?:\d{9}|\d{8}-\d)$/)]],
+      pensionFundInstitution: ['AFP_CONFIA' as PensionFundInstitution, [Validators.required]],
+      emergencyContactName: ['', [Validators.maxLength(150)]],
+      emergencyContactPhone: ['', [Validators.pattern(/^\d{8}$/)]],
+    },
+    { validators: [emergencyContactPairValidator] }
+  );
 
   readonly employmentPeriodForm = this.fb.nonNullable.group({
     startDate: [new Date().toISOString().slice(0, 10), [Validators.required]],
@@ -1091,11 +1270,15 @@ export class EmployeeDetailComponent implements OnInit {
       employee: this.employeeService.getEmployeeById(this.employeeId),
       hierarchy: this.locationService.getHierarchy(),
       history: this.employmentPeriodService.getEmployeeHistory(this.employeeId),
+      linkedUser: this.userService
+        .getUserByEmployeeId(this.employeeId)
+        .pipe(catchError(() => of(null))),
     }).subscribe({
-      next: ({ employee, hierarchy, history }) => {
+      next: ({ employee, hierarchy, history, linkedUser }) => {
         this.employee.set(employee);
         this.departments.set(hierarchy);
         this.employmentHistory.set(history);
+        this.linkedUser.set(linkedUser);
         this.syncFormWithEmployee(employee, hierarchy);
         this.loading.set(false);
       },
@@ -1125,6 +1308,10 @@ export class EmployeeDetailComponent implements OnInit {
     this.saveSuccessMessage.set(null);
     this.actionError.set(null);
     this.periodSubmitAttempted.set(false);
+    this.changeSubmitAttempted.set(false);
+    this.terminateSubmitAttempted.set(false);
+    this.editSubmitAttempted.set(false);
+    this.confirmDeleteChangeId.set(null);
 
     if (nextPanel === 'change') {
       const current = this.currentEmployment();
@@ -1154,7 +1341,90 @@ export class EmployeeDetailComponent implements OnInit {
     return control.invalid && (control.touched || this.periodSubmitAttempted());
   }
 
+  showChangeError(controlName: keyof typeof this.registerChangeForm.controls): boolean {
+    const control = this.registerChangeForm.controls[controlName];
+    return control.invalid && (control.touched || this.changeSubmitAttempted());
+  }
+
+  showTerminateError(controlName: keyof typeof this.terminateForm.controls): boolean {
+    const control = this.terminateForm.controls[controlName];
+    return control.invalid && (control.touched || this.terminateSubmitAttempted());
+  }
+
+  showEditError(controlName: keyof typeof this.editForm.controls): boolean {
+    const control = this.editForm.controls[controlName];
+    return control.invalid && (control.touched || this.editSubmitAttempted());
+  }
+
+  isEffectiveFromBeforePeriodStart(): boolean {
+    const startDate = this.activePeriod()?.startDate;
+    const effectiveFrom = this.registerChangeForm.controls.effectiveFrom.value;
+    if (!startDate || !effectiveFrom) return false;
+    return effectiveFrom < startDate;
+  }
+
+  isEndDateBeforePeriodStart(): boolean {
+    const startDate = this.activePeriod()?.startDate;
+    const endDate = this.terminateForm.controls.endDate.value;
+    if (!startDate || !endDate) return false;
+    return endDate < startDate;
+  }
+
+  canRemoveChange(period: EmploymentPeriodDetails, change: EmploymentChangeDetails): boolean {
+    if (period.status !== 'ACTIVE' || period.changes.length <= 1) {
+      return false;
+    }
+    if (change.effectiveFrom === period.startDate) {
+      return false;
+    }
+    const latest = period.changes.reduce((acc, candidate) =>
+      candidate.effectiveFrom > acc.effectiveFrom ? candidate : acc
+    );
+    return latest.employmentChangeId === change.employmentChangeId;
+  }
+
+  getSalaryDelta(
+    period: EmploymentPeriodDetails,
+    change: EmploymentChangeDetails
+  ): { diff: number; percent: number | null } | null {
+    if (period.changes.length <= 1) return null;
+    const chronological = [...period.changes].sort((a, b) =>
+      a.effectiveFrom.localeCompare(b.effectiveFrom)
+    );
+    const idx = chronological.findIndex(
+      (c) => c.employmentChangeId === change.employmentChangeId
+    );
+    if (idx <= 0) return null;
+    const previous = chronological[idx - 1];
+    const diff = Number((change.baseSalary - previous.baseSalary).toFixed(2));
+    if (diff === 0) return null;
+    const percent = previous.baseSalary > 0 ? (diff / previous.baseSalary) * 100 : null;
+    return { diff, percent };
+  }
+
+  onRemoveChange(periodId: string, changeId: string): void {
+    this.actionError.set(null);
+    this.savingAction.set(true);
+
+    this.employmentPeriodService.removeChange(periodId, changeId).subscribe({
+      next: () => {
+        this.savingAction.set(false);
+        this.confirmDeleteChangeId.set(null);
+        this.saveSuccessMessage.set('Último cambio laboral eliminado correctamente.');
+        this.loadData();
+      },
+      error: (err) => {
+        this.savingAction.set(false);
+        this.confirmDeleteChangeId.set(null);
+        this.actionError.set(
+          extractApiErrorMessage(err, 'No se pudo eliminar el cambio laboral.')
+        );
+      },
+    });
+  }
+
   onSaveEmployee(): void {
+    this.editSubmitAttempted.set(true);
     this.actionError.set(null);
     if (this.editForm.invalid) {
       this.editForm.markAllAsTouched();
@@ -1177,6 +1447,10 @@ export class EmployeeDetailComponent implements OnInit {
       isss: raw.isss.trim() ? raw.isss.trim() : null,
       nup: raw.nup.trim() ? raw.nup.trim() : null,
       pensionFundInstitution: raw.pensionFundInstitution,
+      emergencyContactName: raw.emergencyContactName.trim() ? raw.emergencyContactName.trim() : null,
+      emergencyContactPhone: raw.emergencyContactPhone.trim()
+        ? raw.emergencyContactPhone.trim()
+        : null,
     };
 
     this.employeeService.updateEmployee(this.employeeId, payload).subscribe({
@@ -1242,9 +1516,10 @@ export class EmployeeDetailComponent implements OnInit {
   onRegisterChange(): void {
     const period = this.activePeriod();
     if (!period) return;
+    this.changeSubmitAttempted.set(true);
     this.actionError.set(null);
 
-    if (this.registerChangeForm.invalid) {
+    if (this.registerChangeForm.invalid || this.isEffectiveFromBeforePeriodStart()) {
       this.registerChangeForm.markAllAsTouched();
       return;
     }
@@ -1280,9 +1555,10 @@ export class EmployeeDetailComponent implements OnInit {
   onTerminatePeriod(): void {
     const period = this.activePeriod();
     if (!period) return;
+    this.terminateSubmitAttempted.set(true);
     this.actionError.set(null);
 
-    if (this.terminateForm.invalid) {
+    if (this.terminateForm.invalid || this.isEndDateBeforePeriodStart()) {
       this.terminateForm.markAllAsTouched();
       return;
     }
@@ -1338,6 +1614,47 @@ export class EmployeeDetailComponent implements OnInit {
       isss: emp.isss ?? '',
       nup: emp.nup ?? '',
       pensionFundInstitution: emp.pensionFundInstitution,
+      emergencyContactName: emp.emergencyContactName ?? '',
+      emergencyContactPhone: emp.emergencyContactPhone ?? '',
     });
   }
+}
+
+function minimumAgeValidator(minYears: number) {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value as string;
+    if (!value) return null;
+    const parts = value.split('-').map(Number);
+    if (parts.length !== 3 || parts.some(Number.isNaN)) return { invalidDate: true };
+
+    const [year, month, day] = parts;
+    const today = new Date();
+    const todayYear = today.getFullYear();
+    const todayMonth = today.getMonth() + 1;
+    const todayDay = today.getDate();
+
+    if (
+      year > todayYear ||
+      (year === todayYear && month > todayMonth) ||
+      (year === todayYear && month === todayMonth && day > todayDay)
+    ) {
+      return { futureDate: true };
+    }
+
+    let age = todayYear - year;
+    if (todayMonth < month || (todayMonth === month && todayDay < day)) {
+      age--;
+    }
+
+    return age < minYears ? { underage: true } : null;
+  };
+}
+
+function emergencyContactPairValidator(group: AbstractControl): ValidationErrors | null {
+  const name = (group.get('emergencyContactName')?.value ?? '').trim();
+  const phone = (group.get('emergencyContactPhone')?.value ?? '').trim();
+  if ((name && !phone) || (!name && phone)) {
+    return { incompleteEmergencyContact: true };
+  }
+  return null;
 }

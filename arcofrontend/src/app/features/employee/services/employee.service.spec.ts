@@ -25,6 +25,10 @@ describe('EmployeeService', () => {
     isss: null,
     nup: null,
     pensionFundInstitution: 'AFP_CONFIA',
+    emergencyContactName: null,
+    emergencyContactPhone: null,
+    employmentStatus: 'WITHOUT_PERIOD',
+    currentJobTitle: null,
     createdAt: '2026-11-24T12:00:00Z',
   };
 

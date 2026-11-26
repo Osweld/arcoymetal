@@ -23,6 +23,8 @@ public interface EmployeeDetailsProjection {
     String getIsss();
     String getNup();
     PensionFundInstitution getPensionFundInstitution();
+    String getEmergencyContactName();
+    String getEmergencyContactPhone();
     Instant getCreatedAt();
 
 }

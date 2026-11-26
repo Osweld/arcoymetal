@@ -2,8 +2,11 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { catchError, forkJoin, of } from 'rxjs';
 import { EmployeeService } from '../../services/employee.service';
+import { UserService } from '../../../identity-access/services/user.service';
 import {
+  EMPLOYEE_EMPLOYMENT_FILTER_LABELS,
   EmployeeDetails,
   EmployeeEmploymentStatusFilter,
   PENSION_FUND_LABELS,
@@ -179,10 +182,11 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
           >
             <table
               style="
-                --label-2: 'DUI / Identificación';
-                --label-3: 'AFP / Previsión';
-                --label-4: 'Fecha de Registro';
-                --label-5: 'Acciones';
+                --label-2: 'Estado / Puesto';
+                --label-3: 'DUI / Identificación';
+                --label-4: 'AFP / Previsión';
+                --label-5: 'Fecha de Registro';
+                --label-6: 'Acciones';
               "
             >
               <caption id="employee-table-caption" class="visually-hidden">
@@ -191,6 +195,7 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
               <thead class="bg-slate-100 text-left text-xs font-bold uppercase tracking-wider text-slate-600">
                 <tr>
                   <th scope="col" class="px-5 py-3.5 border-b border-slate-200">Empleado</th>
+                  <th scope="col" class="px-5 py-3.5 border-b border-slate-200">Estado / Puesto</th>
                   <th scope="col" class="px-5 py-3.5 border-b border-slate-200">DUI / Identificación</th>
                   <th scope="col" class="px-5 py-3.5 border-b border-slate-200">AFP / Previsión</th>
                   <th scope="col" class="px-5 py-3.5 border-b border-slate-200">Fecha de Registro</th>
@@ -208,6 +213,24 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                         {{ emp.email }} &bull; Tel: {{ emp.phoneNumber }}
                       </div>
                     </th>
+                    <td class="px-5 py-4">
+                      <span
+                        class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+                        [class.bg-emerald-100]="emp.employmentStatus === 'ACTIVE'"
+                        [class.text-emerald-800]="emp.employmentStatus === 'ACTIVE'"
+                        [class.bg-rose-100]="emp.employmentStatus === 'TERMINATED'"
+                        [class.text-rose-800]="emp.employmentStatus === 'TERMINATED'"
+                        [class.bg-slate-100]="emp.employmentStatus === 'WITHOUT_PERIOD'"
+                        [class.text-slate-700]="emp.employmentStatus === 'WITHOUT_PERIOD'"
+                      >
+                        {{ employmentStatusLabels[emp.employmentStatus] }}
+                      </span>
+                      @if (emp.currentJobTitle) {
+                        <div class="mt-1 text-xs font-medium text-slate-700">
+                          {{ emp.currentJobTitle }}
+                        </div>
+                      }
+                    </td>
                     <td class="px-5 py-4">
                       <div class="font-mono text-xs font-semibold text-slate-800">
                         DUI: {{ emp.dui }}
@@ -235,14 +258,23 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
                         >
                           Expediente
                         </a>
-                        <a
-                          [routerLink]="['/users/new']"
-                          [queryParams]="{ employeeId: emp.employeeId }"
-                          class="rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
-                          title="Crear cuenta de acceso opcional para este empleado"
-                        >
-                          + Usuario
-                        </a>
+                        @if (linkedEmployeeIds().has(emp.employeeId)) {
+                          <span
+                            class="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-800"
+                            title="Este empleado ya cuenta con una cuenta de acceso al sistema"
+                          >
+                            Con usuario
+                          </span>
+                        } @else {
+                          <a
+                            [routerLink]="['/users/new']"
+                            [queryParams]="{ employeeId: emp.employeeId }"
+                            class="rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
+                            title="Crear cuenta de acceso opcional para este empleado"
+                          >
+                            + Usuario
+                          </a>
+                        }
                       </div>
                     </td>
                   </tr>
@@ -285,6 +317,7 @@ import { extractApiErrorMessage } from '../../../../shared/models/api-error.mode
 })
 export class EmployeeListComponent implements OnInit {
   private readonly employeeService = inject(EmployeeService);
+  private readonly userService = inject(UserService);
 
   readonly currentPage = signal(0);
   readonly pageSize = signal(20);
@@ -292,6 +325,7 @@ export class EmployeeListComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly searchTerm = signal('');
   readonly statusFilter = signal<EmployeeEmploymentStatusFilter | ''>('');
+  readonly linkedEmployeeIds = signal<Set<string>>(new Set());
 
   readonly pageResult = signal<PageResult<EmployeeDetails>>({
     content: [],
@@ -304,6 +338,7 @@ export class EmployeeListComponent implements OnInit {
   });
 
   readonly pensionLabels = PENSION_FUND_LABELS;
+  readonly employmentStatusLabels = EMPLOYEE_EMPLOYMENT_FILTER_LABELS;
 
   ngOnInit(): void {
     this.loadPage(0);
@@ -334,26 +369,28 @@ export class EmployeeListComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.employeeService
-      .getEmployeesPage(page, this.pageSize(), {
+    forkJoin({
+      pageResult: this.employeeService.getEmployeesPage(page, this.pageSize(), {
         search: this.searchTerm(),
         employmentStatus: this.statusFilter(),
-      })
-      .subscribe({
-        next: (result) => {
-          this.currentPage.set(result.page);
-          this.pageResult.set(result);
-          this.loading.set(false);
-        },
-        error: (err) => {
-          this.errorMessage.set(
-            extractApiErrorMessage(
-              err,
-              'No se pudo conectar con GET /api/v1/employees. Verifica que el backend Spring Boot esté en ejecución.'
-            )
-          );
-          this.loading.set(false);
-        },
-      });
+      }),
+      linkedIds: this.userService.getLinkedEmployeeIds().pipe(catchError(() => of([] as string[]))),
+    }).subscribe({
+      next: ({ pageResult, linkedIds }) => {
+        this.currentPage.set(pageResult.page);
+        this.pageResult.set(pageResult);
+        this.linkedEmployeeIds.set(new Set(linkedIds));
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.errorMessage.set(
+          extractApiErrorMessage(
+            err,
+            'No se pudo conectar con GET /api/v1/employees. Verifica que el backend Spring Boot esté en ejecución.'
+          )
+        );
+        this.loading.set(false);
+      },
+    });
   }
 }

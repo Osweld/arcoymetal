@@ -41,6 +41,12 @@ export class EmploymentPeriodService {
     );
   }
 
+  removeChange(employmentPeriodId: string, employmentChangeId: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiUrl}/${employmentPeriodId}/changes/${employmentChangeId}`
+    );
+  }
+
   terminatePeriod(
     employmentPeriodId: string,
     payload: TerminateEmploymentPeriodRequest

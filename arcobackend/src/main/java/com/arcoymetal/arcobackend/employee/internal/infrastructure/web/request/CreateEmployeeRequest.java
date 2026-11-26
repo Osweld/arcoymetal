@@ -25,6 +25,8 @@ public record CreateEmployeeRequest(
         @Pattern(regexp = "^(?:\\d{14}|\\d{4}-\\d{6}-\\d{3}-\\d)$") String nit,
         @Pattern(regexp = "^(?:\\d{9}|\\d{8}-\\d)$") String isss,
         @Pattern(regexp = "^(?:\\d{9}|\\d{8}-\\d)$") String nup,
-        @NotNull PensionFundInstitution pensionFundInstitution
+        @NotNull PensionFundInstitution pensionFundInstitution,
+        @Size(max = 150) String emergencyContactName,
+        @Pattern(regexp = "^\\d{8}$") String emergencyContactPhone
     ) {
 }

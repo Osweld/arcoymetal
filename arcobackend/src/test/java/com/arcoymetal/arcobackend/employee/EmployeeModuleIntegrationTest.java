@@ -1,6 +1,7 @@
 package com.arcoymetal.arcobackend.employee;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -728,6 +729,112 @@ class EmployeeModuleIntegrationTest {
         assertThat(afterRaise.getFirst().jobTitle()).isEqualTo("Soldador II");
         assertThat(afterRaise.getFirst().baseSalary()).isEqualByComparingTo("750.00");
         assertThat(afterRaise.getFirst().pensionFundInstitution()).isEqualTo("AFP_CONFIA");
+    }
+
+    @Test
+    void shouldPersistEmergencyContactExposeEmploymentSummaryAndRemoveLatestNonInitialChange() throws Exception {
+        // 1. Create employee with emergency contact
+        String createPayload = """
+                {
+                  "firstName": "Rosa",
+                  "lastName": "Alvarado",
+                  "email": "rosa.alvarado@arcoymetal.com",
+                  "phoneNumber": "72223333",
+                  "gender": "FEMALE",
+                  "birthDate": "1991-09-10",
+                  "addressLine": "Colonia Escalón #42",
+                  "districtId": "%s",
+                  "dui": "04445555-6",
+                  "pensionFundInstitution": "AFP_CRECER",
+                  "emergencyContactName": "José Alvarado",
+                  "emergencyContactPhone": "79998888"
+                }
+                """.formatted(VALID_DISTRICT_ID);
+
+        UUID employeeId = extractUuid(
+                mockMvc.perform(post("/api/v1/employees")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(createPayload))
+                        .andExpect(status().isCreated())
+                        .andReturn(),
+                "employeeId"
+        );
+
+        mockMvc.perform(get("/api/v1/employees/{id}", employeeId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.emergencyContactName").value("José Alvarado"))
+                .andExpect(jsonPath("$.emergencyContactPhone").value("79998888"))
+                .andExpect(jsonPath("$.employmentStatus").value("WITHOUT_PERIOD"))
+                .andExpect(jsonPath("$.currentJobTitle").doesNotExist());
+
+        // 2. Open employment period -> ACTIVE with currentJobTitle
+        UUID periodId = extractUuid(
+                mockMvc.perform(post("/api/v1/employment-periods")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                          "employeeId": "%s",
+                                          "startDate": "2026-01-10",
+                                          "jobTitle": "Operadora CNC",
+                                          "contractType": "FULL_TIME",
+                                          "baseSalary": 650.00
+                                        }
+                                        """.formatted(employeeId)))
+                        .andExpect(status().isCreated())
+                        .andReturn(),
+                "employmentPeriodId"
+        );
+
+        // 3. Register a second change (mistaken entry)
+        UUID latestChangeId = extractUuid(
+                mockMvc.perform(post("/api/v1/employment-periods/{id}/changes", periodId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                          "jobTitle": "Supervisora CNC",
+                                          "contractType": "FULL_TIME",
+                                          "baseSalary": 999.00,
+                                          "effectiveFrom": "2026-06-01"
+                                        }
+                                        """))
+                        .andExpect(status().isCreated())
+                        .andReturn(),
+                "employmentChangeId"
+        );
+
+        mockMvc.perform(get("/api/v1/employees").param("search", "04445555-6"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].employmentStatus").value("ACTIVE"))
+                .andExpect(jsonPath("$.content[0].currentJobTitle").value("Supervisora CNC"));
+
+        // Extract initial change ID from history
+        MvcResult historyResult = mockMvc.perform(get("/api/v1/employees/{id}/employment-periods", employeeId))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode historyJson = objectMapper.readTree(historyResult.getResponse().getContentAsString());
+        UUID initialChangeId = UUID.fromString(historyJson.get(0).get("changes").get(1).get("employmentChangeId").asString());
+
+        // 4. Attempting to delete initial change -> 409 Conflict
+        mockMvc.perform(delete("/api/v1/employment-periods/{periodId}/changes/{changeId}", periodId, initialChangeId))
+                .andExpect(status().isConflict());
+
+        // 5. Attempting to delete unknown change -> 404 Not Found
+        mockMvc.perform(delete("/api/v1/employment-periods/{periodId}/changes/{changeId}", periodId, UUID.randomUUID()))
+                .andExpect(status().isNotFound());
+
+        // 6. Deleting latest non-initial change -> 204 No Content
+        mockMvc.perform(delete("/api/v1/employment-periods/{periodId}/changes/{changeId}", periodId, latestChangeId))
+                .andExpect(status().isNoContent());
+
+        // 7. Verify history now has only the initial change and currentJobTitle reverted
+        mockMvc.perform(get("/api/v1/employees/{id}/employment-periods", employeeId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].changes.length()").value(1))
+                .andExpect(jsonPath("$[0].changes[0].jobTitle").value("Operadora CNC"));
+
+        mockMvc.perform(get("/api/v1/employees/{id}", employeeId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentJobTitle").value("Operadora CNC"));
     }
 
     private UUID extractUuid(MvcResult result, String field) throws Exception {

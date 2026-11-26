@@ -20,6 +20,8 @@ public record UpdateEmployeeCommand(
         String nit,
         String isss,
         String nup,
-        PensionFundInstitution pensionFundInstitution) {
-
+        PensionFundInstitution pensionFundInstitution,
+        String emergencyContactName,
+        String emergencyContactPhone
+) {
 }

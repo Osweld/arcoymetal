@@ -71,4 +71,10 @@ public class EmployeeEntity extends AuditableEntity {
     @Column(name = "pension_fund_institution", nullable = false, length = 30)
     private PensionFundInstitution pensionFundInstitution;
 
+    @Column(name = "emergency_contact_name", length = 150)
+    private String emergencyContactName;
+
+    @Column(name = "emergency_contact_phone", length = 8)
+    private String emergencyContactPhone;
+
 }

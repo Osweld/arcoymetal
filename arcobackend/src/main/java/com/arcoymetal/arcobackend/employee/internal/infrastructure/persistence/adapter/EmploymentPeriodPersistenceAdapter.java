@@ -62,6 +62,11 @@ public class EmploymentPeriodPersistenceAdapter implements EmploymentPeriodRepos
     }
 
     @Override
+    public void deleteChange(UUID employmentChangeId) {
+        springDataEmploymentChangeRepository.deleteById(employmentChangeId);
+    }
+
+    @Override
     public EmploymentPeriod findById(UUID employmentId) {
         EmploymentPeriodEntity periodEntity = springDataEmploymentPeriodRepository.findById(employmentId)
                 .orElseThrow(() -> new EmploymentPeriodNotFoundException(employmentId));

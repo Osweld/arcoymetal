@@ -27,6 +27,14 @@ export class UserService {
     return this.http.get<UserSummary>(`${this.apiUrl}/${id}`);
   }
 
+  getUserByEmployeeId(employeeId: string): Observable<UserSummary> {
+    return this.http.get<UserSummary>(`${this.apiUrl}/by-employee/${employeeId}`);
+  }
+
+  getLinkedEmployeeIds(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/linked-employee-ids`);
+  }
+
   createUser(payload: CreateUserRequest): Observable<CreateUserResponse> {
     return this.http.post<CreateUserResponse>(this.apiUrl, payload);
   }

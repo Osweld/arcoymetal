@@ -1,14 +1,18 @@
 package com.arcoymetal.arcobackend.employee.internal.domain.employment;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.EmployeeId;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.CannotDeleteInitialEmploymentChangeException;
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.DuplicateEmploymentChangeDateException;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.EmploymentChangeNotFoundException;
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.EmploymentPeriodNotActiveException;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.OnlyLatestEmploymentChangeCanBeRemovedException;
 
 public class EmploymentPeriod {
     private final EmploymentId employmentId;
@@ -166,6 +170,46 @@ public class EmploymentPeriod {
                 EmploymentStatus.TERMINATED,
                 terminationReason,
                 this.employmentChanges
+        );
+    }
+
+    public EmploymentPeriod removeLatestChange(EmploymentChangeId changeId) {
+        Objects.requireNonNull(changeId, "EmploymentChangeId cannot be null");
+
+        if (this.status != EmploymentStatus.ACTIVE) {
+            throw new EmploymentPeriodNotActiveException(this.employmentId.value());
+        }
+
+        EmploymentChange target = this.employmentChanges.stream()
+                .filter(c -> c.getEmploymentChangeId().equals(changeId))
+                .findFirst()
+                .orElseThrow(() -> new EmploymentChangeNotFoundException(changeId.value()));
+
+        if (this.employmentChanges.size() <= 1
+                || target.getEffectiveFrom().value().equals(this.startDate.value())) {
+            throw new CannotDeleteInitialEmploymentChangeException();
+        }
+
+        EmploymentChange latest = this.employmentChanges.stream()
+                .max(Comparator.comparing(c -> c.getEffectiveFrom().value()))
+                .orElseThrow(() -> new EmploymentChangeNotFoundException(changeId.value()));
+
+        if (!latest.getEmploymentChangeId().equals(changeId)) {
+            throw new OnlyLatestEmploymentChangeCanBeRemovedException(changeId.value());
+        }
+
+        List<EmploymentChange> remaining = this.employmentChanges.stream()
+                .filter(c -> !c.getEmploymentChangeId().equals(changeId))
+                .toList();
+
+        return new EmploymentPeriod(
+                this.employmentId,
+                this.employeeId,
+                this.startDate,
+                this.endDate,
+                this.status,
+                this.terminationReason,
+                remaining
         );
     }
 

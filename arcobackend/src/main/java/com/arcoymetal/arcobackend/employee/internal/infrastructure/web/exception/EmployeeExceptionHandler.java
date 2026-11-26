@@ -10,11 +10,14 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.ActiveEmploymentPeriodAlreadyExistsException;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.CannotDeleteInitialEmploymentChangeException;
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.DuplicateEmployeeException;
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.DuplicateEmploymentChangeDateException;
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.EmployeeNotFoundException;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.EmploymentChangeNotFoundException;
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.EmploymentPeriodNotActiveException;
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.EmploymentPeriodNotFoundException;
+import com.arcoymetal.arcobackend.employee.internal.domain.exception.OnlyLatestEmploymentChangeCanBeRemovedException;
 import com.arcoymetal.arcobackend.employee.internal.domain.exception.OverlappingEmploymentPeriodException;
 import com.arcoymetal.arcobackend.shared.infrastructure.web.exception.ApiErrorResponse;
 
@@ -22,7 +25,11 @@ import com.arcoymetal.arcobackend.shared.infrastructure.web.exception.ApiErrorRe
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class EmployeeExceptionHandler {
 
-    @ExceptionHandler({ EmployeeNotFoundException.class, EmploymentPeriodNotFoundException.class })
+    @ExceptionHandler({
+            EmployeeNotFoundException.class,
+            EmploymentPeriodNotFoundException.class,
+            EmploymentChangeNotFoundException.class
+    })
     public ResponseEntity<ApiErrorResponse> handleNotFound(RuntimeException exception) {
         ApiErrorResponse response = new ApiErrorResponse(
                 Instant.now(),
@@ -38,7 +45,9 @@ public class EmployeeExceptionHandler {
             ActiveEmploymentPeriodAlreadyExistsException.class,
             EmploymentPeriodNotActiveException.class,
             DuplicateEmploymentChangeDateException.class,
-            OverlappingEmploymentPeriodException.class
+            OverlappingEmploymentPeriodException.class,
+            CannotDeleteInitialEmploymentChangeException.class,
+            OnlyLatestEmploymentChangeCanBeRemovedException.class
     })
     public ResponseEntity<ApiErrorResponse> handleConflict(RuntimeException exception) {
         ApiErrorResponse response = new ApiErrorResponse(

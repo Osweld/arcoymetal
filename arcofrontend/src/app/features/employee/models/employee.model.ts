@@ -76,6 +76,10 @@ export interface EmployeeDetails {
   isss: string | null;
   nup: string | null;
   pensionFundInstitution: PensionFundInstitution;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  employmentStatus: EmployeeEmploymentStatusFilter;
+  currentJobTitle: string | null;
   createdAt: string;
 }
 
@@ -93,6 +97,8 @@ export interface CreateEmployeeRequest {
   isss?: string | null;
   nup?: string | null;
   pensionFundInstitution: PensionFundInstitution;
+  emergencyContactName?: string | null;
+  emergencyContactPhone?: string | null;
 }
 
 export interface CreateEmployeeResponse {
@@ -139,6 +145,12 @@ export const PENSION_FUND_LABELS: Record<PensionFundInstitution, string> = {
 export const EMPLOYMENT_STATUS_LABELS: Record<EmploymentStatus, string> = {
   ACTIVE: 'Activo',
   TERMINATED: 'Finalizado / Baja',
+};
+
+export const EMPLOYEE_EMPLOYMENT_FILTER_LABELS: Record<EmployeeEmploymentStatusFilter, string> = {
+  ACTIVE: 'Activo',
+  TERMINATED: 'Finalizado / Baja',
+  WITHOUT_PERIOD: 'Sin periodo',
 };
 
 export const TERMINATION_REASON_LABELS: Record<TerminationReason, string> = {

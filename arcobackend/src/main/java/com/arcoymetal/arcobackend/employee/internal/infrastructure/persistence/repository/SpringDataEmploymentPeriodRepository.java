@@ -1,6 +1,7 @@
 package com.arcoymetal.arcobackend.employee.internal.infrastructure.persistence.repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,6 +22,8 @@ public interface SpringDataEmploymentPeriodRepository extends JpaRepository<Empl
     );
 
     List<EmploymentPeriodEntity> findByEmployeeIdOrderByStartDateDescCreatedAtDesc(UUID employeeId);
+
+    List<EmploymentPeriodEntity> findByEmployeeIdIn(Collection<UUID> employeeIds);
 
     List<EmploymentPeriodEntity> findByStatusAndStartDateLessThanEqual(
             EmploymentStatus status,

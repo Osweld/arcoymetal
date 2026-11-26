@@ -18,20 +18,27 @@ export interface NavItem {
       aria-label="Navegación principal"
     >
       <!-- Brand Header -->
-      <div class="flex items-center gap-3 px-6 py-5 border-b border-slate-800/80">
+      <a
+        routerLink="/dashboard"
+        (click)="navigate.emit()"
+        class="flex items-center gap-3 px-5 py-4 border-b border-slate-800/80 hover:bg-slate-800/40 transition-colors"
+      >
         <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-slate-950 font-black text-lg shadow-sm"
-          aria-hidden="true"
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white p-0.5 shadow-sm ring-2 ring-cyan-400/40 overflow-hidden"
         >
-          A&amp;M
+          <img
+            src="images/logo-full.jpg"
+            alt="Logo de Arco &amp; Metal Mecánica"
+            class="h-full w-full rounded-full object-contain"
+          />
         </div>
         <div class="min-w-0">
           <p class="truncate text-sm font-bold tracking-wide text-white uppercase">
             Arco &amp; Metal
           </p>
-          <p class="truncate text-xs text-slate-400">Estructuras Metálicas S.A.S.</p>
+          <p class="truncate text-xs text-slate-400">Mecánica &bull; Metapán, SV</p>
         </div>
-      </div>
+      </a>
 
       <!-- Main Navigation -->
       <nav class="flex-1 overflow-y-auto px-3 py-5 space-y-6">

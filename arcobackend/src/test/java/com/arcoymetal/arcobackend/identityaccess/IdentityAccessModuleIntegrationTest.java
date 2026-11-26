@@ -98,6 +98,22 @@ class IdentityAccessModuleIntegrationTest {
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.content[0].id").value(userId.toString()));
+
+        // GET linked employee IDs
+        mockMvc.perform(get("/api/v1/users/linked-employee-ids"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0]").value(employeeId.toString()));
+
+        // GET user by employeeId (200 OK and 404 Not Found for unlinked employee)
+        mockMvc.perform(get("/api/v1/users/by-employee/{employeeId}", employeeId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(userId.toString()))
+                .andExpect(jsonPath("$.email").value("admin.user@arcoymetal.com.sv"));
+
+        mockMvc.perform(get("/api/v1/users/by-employee/{employeeId}", UUID.randomUUID()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test

@@ -15,6 +15,7 @@ import com.arcoymetal.arcobackend.employee.internal.domain.employee.BirthDate;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.DUI;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.DistrictId;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.Email;
+import com.arcoymetal.arcobackend.employee.internal.domain.employee.EmergencyContact;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.Employee;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.EmployeeId;
 import com.arcoymetal.arcobackend.employee.internal.domain.employee.ISSS;
@@ -41,6 +42,10 @@ public class UpdateEmployeeService implements UpdateEmployeeUseCase {
 
         Employee existingEmployee = employeeRepository.findById(command.employeeId());
 
+        EmergencyContact emergencyContact = buildEmergencyContact(
+                command.emergencyContactName(),
+                command.emergencyContactPhone());
+
         Employee updatedEmployee = Employee.update(
                 existingEmployee.getEmployeeId(),
                 new Name(command.firstName(), command.lastName()),
@@ -54,6 +59,7 @@ public class UpdateEmployeeService implements UpdateEmployeeUseCase {
                 hasText(command.isss()) ? new ISSS(command.isss()) : null,
                 hasText(command.nup()) ? new NUP(command.nup()) : null,
                 command.pensionFundInstitution(),
+                emergencyContact,
                 clock);
 
         if (!updatedEmployee.getEmail().equals(existingEmployee.getEmail())
@@ -87,6 +93,19 @@ public class UpdateEmployeeService implements UpdateEmployeeUseCase {
         employeeRepository.save(updatedEmployee);
 
         return updatedEmployee.getEmployeeId();
+    }
+
+    private static EmergencyContact buildEmergencyContact(String name, String phone) {
+        boolean hasName = hasText(name);
+        boolean hasPhone = hasText(phone);
+        if (!hasName && !hasPhone) {
+            return null;
+        }
+        if (!hasName || !hasPhone) {
+            throw new IllegalArgumentException(
+                    "Both emergency contact name and phone number are required when providing an emergency contact.");
+        }
+        return new EmergencyContact(name, new PhoneNumber(phone));
     }
 
     private static boolean hasText(String value) {
